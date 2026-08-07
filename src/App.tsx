@@ -41,6 +41,11 @@ const AdminPage = lazy(() => import('@/pages/AdminPage'));
 const LearnPage = lazy(() => import('@/pages/LearnPage'));
 const TopicLessonPage = lazy(() => import('@/pages/TopicLessonPage'));
 const QuizPage = lazy(() => import('@/pages/QuizPage'));
+const MarketHubPage = lazy(() => import('@/pages/MarketHubPage'));
+const WatchlistPage = lazy(() => import('@/pages/WatchlistPage'));
+const AlertsPage = lazy(() => import('@/pages/AlertsPage'));
+const CalendarPage = lazy(() => import('@/pages/CalendarPage'));
+const StatisticsPage = lazy(() => import('@/pages/StatisticsPage'));
 
 const queryClient = new QueryClient();
 
@@ -392,6 +397,66 @@ function ProtectedQuizPage({ params }: { params: { topicId: string } }) {
   return <QuizPage topicId={params.topicId} />;
 }
 
+function ProtectedMarketHubPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <MarketHubPage />;
+}
+
+function ProtectedWatchlistPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <WatchlistPage />;
+}
+
+function ProtectedAlertsPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <AlertsPage />;
+}
+
+function ProtectedCalendarPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <CalendarPage />;
+}
+
+function ProtectedStatisticsPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <StatisticsPage />;
+}
+
 function Router() {
   return (
     <Suspense fallback={<LoadingScreen />}>
@@ -418,7 +483,12 @@ function Router() {
         <Route path="/settings" component={ProtectedSettingsPage} />
         <Route path="/notifications" component={ProtectedNotificationsPage} />
         <Route path="/help" component={ProtectedHelpPage} />
-        <Route path="/admin" component={AdminPage} />
+        <Route path="/admin" component={AdminGuard} />
+        <Route path="/market-hub" component={ProtectedMarketHubPage} />
+        <Route path="/watchlist" component={ProtectedWatchlistPage} />
+        <Route path="/alerts" component={ProtectedAlertsPage} />
+        <Route path="/calendar" component={ProtectedCalendarPage} />
+        <Route path="/statistics" component={ProtectedStatisticsPage} />
         <Route path="/learn/:topicId/quiz" component={ProtectedQuizPage} />
         <Route path="/learn/:topicId" component={ProtectedTopicLessonPage} />
         <Route component={NotFound} />

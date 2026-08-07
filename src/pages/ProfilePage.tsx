@@ -13,6 +13,10 @@ import {
   Trophy,
   Target,
   ShieldCheck,
+  Compass,
+  Star,
+  Calendar,
+  BarChart2,
 } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -142,11 +146,42 @@ export default function ProfilePage() {
         {/* Menu */}
         <div className="space-y-2">
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-1">
-            Progress
+            Trading Hub & Tools
+          </p>
+          <ProfileMenuItem
+            icon={Compass}
+            label="Daily Market Hub"
+            onClick={() => setLocation('/market-hub')}
+          />
+          <ProfileMenuItem
+            icon={Star}
+            label="Advanced Watchlists"
+            onClick={() => setLocation('/watchlist')}
+          />
+          <ProfileMenuItem
+            icon={Bell}
+            label="Price Alerts"
+            onClick={() => setLocation('/alerts')}
+          />
+          <ProfileMenuItem
+            icon={Calendar}
+            label="Portfolio Calendar"
+            onClick={() => setLocation('/calendar')}
+          />
+          <ProfileMenuItem
+            icon={BarChart2}
+            label="Personal Statistics"
+            onClick={() => setLocation('/statistics')}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-1">
+            Progress & Achievements
           </p>
           <ProfileMenuItem
             icon={Trophy}
-            label="Achievements"
+            label="Achievements & Levels"
             onClick={() => setLocation('/achievements')}
           />
           <ProfileMenuItem
@@ -160,6 +195,13 @@ export default function ProfilePage() {
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-1">
             Account
           </p>
+          {isAdmin && (
+            <ProfileMenuItem
+              icon={ShieldCheck}
+              label="Admin Panel Enterprise V3"
+              onClick={() => setLocation('/admin')}
+            />
+          )}
           <ProfileMenuItem
             icon={UserRound}
             label="Edit Profile"

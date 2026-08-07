@@ -1,11 +1,13 @@
 import { useLocation } from 'wouter';
-import { ChevronLeft, PieChart, History } from 'lucide-react';
+import { ChevronLeft, PieChart, History, BarChart2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useHoldings } from '@/hooks/useHoldings';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { HoldingCard } from '@/components/portfolio/HoldingCard';
 import { BottomNav } from '@/components/dashboard/BottomNav';
 import { MarketSkeleton } from '@/components/markets/MarketSkeleton';
+import { QuickActionsMenu } from '@/components/dashboard/QuickActionsMenu';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 function SummaryStatCell({
   label,
@@ -72,13 +74,23 @@ export default function PortfolioPage() {
           <ChevronLeft className="w-5 h-5" />
         </button>
         <span className="font-semibold text-base text-foreground">Portfolio</span>
-        <button
-          onClick={() => setLocation('/history')}
-          className="text-muted-foreground hover:text-foreground transition-colors p-1"
-          aria-label="Trade history"
-        >
-          <History className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setLocation('/statistics')}
+            className="text-muted-foreground hover:text-primary transition-colors p-1"
+            aria-label="Personal Statistics"
+            title="Personal Analytics"
+          >
+            <BarChart2 className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setLocation('/history')}
+            className="text-muted-foreground hover:text-foreground transition-colors p-1"
+            aria-label="Trade history"
+          >
+            <History className="w-5 h-5" />
+          </button>
+        </div>
       </header>
 
       {/* Scrollable content */}
@@ -144,23 +156,16 @@ export default function PortfolioPage() {
           {holdingsLoading ? (
             <MarketSkeleton count={3} />
           ) : holdings.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-4 text-muted-foreground">
-              <div className="w-14 h-14 rounded-full bg-secondary/50 flex items-center justify-center">
-                <PieChart className="w-7 h-7 text-muted-foreground/50" />
-              </div>
-              <div className="text-center space-y-1">
-                <p className="text-sm text-foreground font-medium">No holdings yet</p>
-                <p className="text-xs text-muted-foreground">
-                  Start paper trading from the Markets tab.
-                </p>
-              </div>
-              <button
-                onClick={() => setLocation('/markets')}
-                className="font-mono text-xs bg-primary text-background px-5 py-2.5 rounded-xl font-semibold hover:opacity-90 transition-opacity"
-              >
-                Browse Markets
-              </button>
-            </div>
+            <EmptyState
+              icon={PieChart}
+              title="No active holdings"
+              description="You haven't bought any assets yet. Execute paper trades from the Markets or Market Hub to build your portfolio."
+              actionLabel="Browse Markets"
+              onAction={() => setLocation('/markets')}
+              secondaryActionLabel="Daily Market Hub"
+              onSecondaryAction={() => setLocation('/market-hub')}
+              className="mt-4"
+            />
           ) : (
             <div className="space-y-2">
               {holdings.map((h) => (
@@ -171,6 +176,7 @@ export default function PortfolioPage() {
         </div>
       </main>
 
+      <QuickActionsMenu />
       <BottomNav />
     </div>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, useCallback, type FormEvent } from 'react';
 import { useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -21,22 +21,41 @@ import {
   Terminal,
   Server,
   Zap,
+  BarChart3,
+  Bell,
+  MessageSquare,
+  FileText,
+  Settings,
+  ShieldAlert,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { isAdminEmail, ADMIN_EMAIL } from '@/lib/adminConfig';
 import { listAllUsers, type AdminUserRow } from '@/lib/adminService';
-import { AdminUserDetailSheet } from '@/components/admin/AdminUserDetailSheet';
-import { AddStockForm } from '@/components/admin/AddStockForm';
-import { useAllAssets } from '@/hooks/useAllAssets';
+import { AdminUserDetailModal } from '@/components/admin/AdminUserDetailModal';
+import { AdminDashboardOverview } from '@/components/admin/AdminDashboardOverview';
+import { AdminNotificationCenter } from '@/components/admin/AdminNotificationCenter';
+import { AdminSupportManager } from '@/components/admin/AdminSupportManager';
+import { AdminReportsManager } from '@/components/admin/AdminReportsManager';
+import { AdminSystemSettings } from '@/components/admin/AdminSystemSettings';
+import { AdminSecurityManager } from '@/components/admin/AdminSecurityManager';
 
-type Tab = 'users' | 'deploy' | 'system';
+type EnterpriseTab =
+  | 'dashboard'
+  | 'users'
+  | 'notifications'
+  | 'support'
+  | 'reports'
+  | 'settings'
+  | 'security';
 
 const fmt = (n: number) =>
   `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
-/** Subtle grid backdrop for the high-tech admin terminal aesthetic */
+/** Futuristic grid backdrop */
 function CyberGridBackdrop() {
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-[0.06] z-0">
@@ -52,7 +71,7 @@ function CyberGridBackdrop() {
   );
 }
 
-/** Standalone Admin Portal Sign-In Screen */
+/** Standalone Enterprise Admin Login Portal */
 function AdminPortalLogin() {
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState(ADMIN_EMAIL);
@@ -63,7 +82,7 @@ function AdminPortalLogin() {
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setError('Please provide admin credentials.');
+      setError('Please provide valid administrative credentials.');
       return;
     }
     setBusy(true);
@@ -77,9 +96,9 @@ function AdminPortalLogin() {
     } catch (err: any) {
       console.error('Admin portal auth error:', err);
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
-        setError('Invalid admin password or email.');
+        setError('Invalid admin password or authorization key.');
       } else {
-        setError(err.message || 'Failed to authenticate admin session.');
+        setError(err.message || 'Failed to authenticate administrative session.');
       }
     } finally {
       setBusy(false);
@@ -90,26 +109,26 @@ function AdminPortalLogin() {
     <div className="min-h-screen bg-[#030509] text-slate-100 flex flex-col justify-center items-center p-4 relative overflow-hidden font-sans">
       <CyberGridBackdrop />
 
-      {/* Glow effect */}
-      <div className="absolute w-96 h-96 bg-primary/10 rounded-full blur-3xl top-1/4 left-1/2 -translate-x-1/2 pointer-events-none" />
+      <div className="absolute w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl top-1/4 left-1/2 -translate-x-1/2 pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-md bg-slate-950/80 border border-primary/20 backdrop-blur-xl rounded-2xl p-6 md:p-8 shadow-2xl relative z-10"
+        className="w-full max-w-md bg-slate-950/90 border border-cyan-500/30 backdrop-blur-xl rounded-2xl p-6 md:p-8 shadow-2xl relative z-10"
+        style={{ boxShadow: '0 0 60px rgba(0, 224, 255, 0.12)' }}
       >
         <div className="flex flex-col items-center text-center space-y-3 mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary shadow-lg shadow-primary/10">
+          <div className="w-14 h-14 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-500/10">
             <ShieldCheck className="w-7 h-7" />
           </div>
           <div>
             <div className="flex items-center justify-center gap-1.5 mb-1">
-              <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
-                System Portal
+              <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+                Enterprise Edition V3
               </span>
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-white">AlphaNXT Admin Terminal</h1>
+            <h1 className="text-xl font-bold tracking-tight text-white">AlphaNXT Admin Console</h1>
             <p className="text-xs text-slate-400 mt-1">
               Restricted management console for authorized system operators.
             </p>
@@ -120,21 +139,21 @@ function AdminPortalLogin() {
           <motion.div
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-5 p-3 rounded-xl bg-red-950/60 border border-red-800/50 text-red-300 text-xs flex items-start gap-2"
+            className="mb-5 p-3 rounded-xl bg-red-950/80 border border-red-800 text-red-300 text-xs flex items-start gap-2 font-mono"
           >
             <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
             <span>{error}</span>
           </motion.div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4 font-mono text-xs">
           <div className="space-y-1.5">
-            <label className="font-mono text-[10px] uppercase tracking-wider text-slate-400 flex justify-between">
+            <label className="text-[10px] uppercase tracking-wider text-slate-400 flex justify-between">
               <span>Admin Email</span>
               <button
                 type="button"
                 onClick={() => setEmail(ADMIN_EMAIL)}
-                className="text-primary hover:underline lowercase"
+                className="text-cyan-400 hover:underline lowercase"
               >
                 use default
               </button>
@@ -147,14 +166,14 @@ function AdminPortalLogin() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@alphanxt.com"
                 required
-                className="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-primary/60 transition-colors"
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:border-cyan-500"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="font-mono text-[10px] uppercase tracking-wider text-slate-400">
-              Passkey / Password
+            <label className="text-[10px] uppercase tracking-wider text-slate-400">
+              Security Passkey
             </label>
             <div className="relative">
               <KeyRound className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -164,7 +183,7 @@ function AdminPortalLogin() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
                 required
-                className="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-primary/60 transition-colors"
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:border-cyan-500"
               />
             </div>
           </div>
@@ -172,7 +191,7 @@ function AdminPortalLogin() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full mt-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 disabled:opacity-50 cursor-pointer"
+            className="w-full mt-2 bg-cyan-500 hover:bg-cyan-400 text-black font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 disabled:opacity-50 cursor-pointer"
           >
             {busy ? (
               <>
@@ -191,7 +210,7 @@ function AdminPortalLogin() {
         <div className="mt-6 pt-5 border-t border-slate-800/80 flex flex-col items-center gap-3">
           <button
             onClick={() => setLocation('/dashboard')}
-            className="text-xs text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5"
+            className="text-xs text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5 font-mono"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Return to User Trading Terminal
@@ -206,14 +225,43 @@ function AdminPortalLogin() {
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
-  const allAssets = useAllAssets();
 
-  const [activeTab, setActiveTab] = useState<Tab>('users');
+  const [activeTab, setActiveTab] = useState<EnterpriseTab>('dashboard');
   const [search, setSearch] = useState('');
   const [users, setUsers] = useState<AdminUserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AdminUserRow | null>(null);
+
+  // Inactivity Auto-Logout Timer State
+  const [lastActivity, setLastActivity] = useState<number>(Date.now());
+  const [showInactivityWarning, setShowInactivityWarning] = useState(false);
+
+  const resetActivity = useCallback(() => {
+    setLastActivity(Date.now());
+    if (showInactivityWarning) setShowInactivityWarning(false);
+  }, [showInactivityWarning]);
+
+  useEffect(() => {
+    const events = ['mousemove', 'keydown', 'click', 'scroll'];
+    events.forEach((evt) => window.addEventListener(evt, resetActivity));
+    return () => events.forEach((evt) => window.removeEventListener(evt, resetActivity));
+  }, [resetActivity]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - lastActivity;
+      // 14 mins warning (840,000 ms)
+      if (elapsed > 840000 && elapsed < 900000) {
+        setShowInactivityWarning(true);
+      } else if (elapsed >= 900000) {
+        // 15 mins auto-logout
+        signOut(auth);
+        setLocation('/login');
+      }
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [lastActivity, setLocation]);
 
   const loadUsers = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -239,18 +287,9 @@ export default function AdminPage() {
     if (!search.trim()) return users;
     const q = search.toLowerCase();
     return users.filter(
-      (u) => u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q),
+      (u) => u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.uid.toLowerCase().includes(q),
     );
   }, [users, search]);
-
-  const totals = useMemo(
-    () => ({
-      userCount: users.length,
-      totalBalance: users.reduce((sum, u) => sum + u.virtualBalance, 0),
-      totalPL: users.reduce((sum, u) => sum + u.totalProfitLoss, 0),
-    }),
-    [users],
-  );
 
   const handleAdminSignOut = async () => {
     await signOut(auth);
@@ -259,39 +298,39 @@ export default function AdminPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#030509] flex items-center justify-center text-primary">
+      <div className="min-h-screen bg-[#030509] flex items-center justify-center text-cyan-400">
         <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     );
   }
 
-  // If user is not logged in or not authorized as an admin, render the separate Admin Login Portal
+  // Block unauthorized users
   if (!user || !isAdminEmail(user.email)) {
     return <AdminPortalLogin />;
   }
 
   return (
-    <div className="min-h-screen bg-[#030509] text-slate-100 flex flex-col relative font-sans selection:bg-primary/30">
+    <div className="min-h-screen bg-[#030509] text-slate-100 flex flex-col relative font-sans selection:bg-cyan-500/30">
       <CyberGridBackdrop />
 
       {/* Top Header Navigation Bar */}
-      <header className="sticky top-0 z-40 bg-[#050811]/90 backdrop-blur-md border-b border-primary/20">
+      <header className="sticky top-0 z-40 bg-[#050811]/90 backdrop-blur-md border-b border-cyan-500/20 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-md shadow-cyan-500/10">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-base text-white tracking-tight">
-                  AlphaNXT Admin Terminal
+                  AlphaNXT Admin Console
                 </span>
-                <span className="bg-primary/20 text-primary font-mono text-[9px] uppercase tracking-widest px-2 py-0.5 rounded border border-primary/30">
-                  Control Console
+                <span className="bg-cyan-500/20 text-cyan-400 font-mono text-[9px] uppercase tracking-widest px-2 py-0.5 rounded border border-cyan-500/30">
+                  Enterprise V3
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 hidden sm:block">
-                System Administration & Paper Market Operations
+                Full-Control System Management & Financial Operations
               </p>
             </div>
           </div>
@@ -299,17 +338,17 @@ export default function AdminPage() {
           <div className="flex items-center gap-3">
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-800/40 text-emerald-400 font-mono text-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>SYSTEM ONLINE</span>
+              <span>SYSTEM ONLINE 100%</span>
             </div>
 
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300">
-              <User className="w-3.5 h-3.5 text-primary" />
-              <span className="font-mono text-[11px]">{user.email}</span>
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 font-mono">
+              <User className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-[11px]">{user.email}</span>
             </div>
 
             <button
               onClick={() => setLocation('/dashboard')}
-              className="text-xs text-slate-300 hover:text-white px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-colors flex items-center gap-1.5"
+              className="text-xs text-slate-300 hover:text-white px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-colors flex items-center gap-1.5 font-mono"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-slate-400" />
               <span className="hidden sm:inline">User Terminal</span>
@@ -317,7 +356,7 @@ export default function AdminPage() {
 
             <button
               onClick={handleAdminSignOut}
-              className="text-xs text-red-400 hover:text-red-300 px-3 py-2 rounded-lg bg-red-950/30 hover:bg-red-950/60 border border-red-900/40 transition-colors flex items-center gap-1.5"
+              className="text-xs text-red-400 hover:text-red-300 px-3 py-2 rounded-lg bg-red-950/30 hover:bg-red-950/60 border border-red-900/40 transition-colors flex items-center gap-1.5 font-mono"
               title="Sign Out Admin Session"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -329,96 +368,30 @@ export default function AdminPage() {
 
       {/* Main Admin Console Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-6 py-6 space-y-6 relative z-10">
-        {/* Stat Overview Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-primary/20 bg-slate-950/60 p-4 relative overflow-hidden backdrop-blur-sm"
-          >
-            <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="font-mono text-[10px] uppercase tracking-wider">Registered Users</span>
-              <Users className="w-4 h-4 text-primary" />
-            </div>
-            <p className="font-mono text-xl md:text-2xl font-bold text-white">
-              {loading ? '—' : totals.userCount.toString()}
-            </p>
-            <p className="text-[11px] text-slate-400 mt-1">Active trader accounts</p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="rounded-2xl border border-primary/20 bg-slate-950/60 p-4 relative overflow-hidden backdrop-blur-sm"
-          >
-            <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="font-mono text-[10px] uppercase tracking-wider">Total Virtual Capital</span>
-              <Wallet className="w-4 h-4 text-primary" />
-            </div>
-            <p className="font-mono text-xl md:text-2xl font-bold text-white">
-              {loading ? '—' : fmt(totals.totalBalance)}
-            </p>
-            <p className="text-[11px] text-slate-400 mt-1">Circulating paper money</p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="rounded-2xl border border-primary/20 bg-slate-950/60 p-4 relative overflow-hidden backdrop-blur-sm"
-          >
-            <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="font-mono text-[10px] uppercase tracking-wider">System Net P/L</span>
-              <Activity className="w-4 h-4 text-primary" />
-            </div>
-            <p
-              className={`font-mono text-xl md:text-2xl font-bold ${
-                totals.totalPL >= 0 ? 'text-emerald-400' : 'text-red-400'
-              }`}
-            >
-              {loading ? '—' : `${totals.totalPL >= 0 ? '+' : ''}${fmt(totals.totalPL)}`}
-            </p>
-            <p className="text-[11px] text-slate-400 mt-1">Combined trader returns</p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="rounded-2xl border border-primary/20 bg-slate-950/60 p-4 relative overflow-hidden backdrop-blur-sm"
-          >
-            <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="font-mono text-[10px] uppercase tracking-wider">Market Feeds</span>
-              <Cpu className="w-4 h-4 text-primary" />
-            </div>
-            <p className="font-mono text-xl md:text-2xl font-bold text-white">
-              {allAssets.length}
-            </p>
-            <p className="text-[11px] text-slate-400 mt-1">Live market instruments</p>
-          </motion.div>
-        </div>
-
-        {/* Console Navigation Tabs */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-          <div className="flex gap-2">
+        {/* Navigation Tabs */}
+        <div className="flex items-center justify-between border-b border-slate-800/80 pb-3 overflow-x-auto gap-2">
+          <div className="flex gap-1.5 font-mono text-xs">
             {[
+              { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
               { id: 'users', label: 'User Registry', icon: Users },
-              { id: 'deploy', label: 'Deploy Stocks', icon: Cpu },
-              { id: 'system', label: 'Engine Health', icon: Server },
+              { id: 'notifications', label: 'Notifications', icon: Bell },
+              { id: 'support', label: 'Support Tickets', icon: MessageSquare },
+              { id: 'reports', label: 'Reports', icon: FileText },
+              { id: 'settings', label: 'System Settings', icon: Settings },
+              { id: 'security', label: 'Security & Audit', icon: ShieldAlert },
             ].map((t) => {
               const Icon = t.icon;
               return (
                 <button
                   key={t.id}
-                  onClick={() => setActiveTab(t.id as Tab)}
-                  className={`px-4 py-2.5 rounded-xl font-mono text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+                  onClick={() => setActiveTab(t.id as EnterpriseTab)}
+                  className={`px-3.5 py-2.5 rounded-xl uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
                     activeTab === t.id
-                      ? 'bg-primary text-primary-foreground font-semibold shadow-md shadow-primary/20'
+                      ? 'bg-cyan-500 text-black font-bold shadow-md shadow-cyan-500/20'
                       : 'bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-3.5 h-3.5" />
                   <span>{t.label}</span>
                 </button>
               );
@@ -427,38 +400,47 @@ export default function AdminPage() {
 
           <button
             onClick={() => loadUsers(true)}
-            className="text-slate-400 hover:text-white p-2 rounded-lg bg-slate-900 border border-slate-800 transition-colors flex items-center gap-1.5 text-xs font-mono"
-            title="Refresh Registry Data"
+            className="text-slate-400 hover:text-white p-2.5 rounded-xl bg-slate-900 border border-slate-800 transition-colors flex items-center gap-1.5 text-xs font-mono shrink-0"
+            title="Refresh System Data"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Refresh</span>
           </button>
         </div>
 
-        {/* Tab 1: User Registry */}
+        {/* Tab 1: Executive Dashboard */}
+        {activeTab === 'dashboard' && (
+          <AdminDashboardOverview
+            users={users}
+            loading={loading}
+            onSelectUser={(u) => setSelectedUser(u)}
+          />
+        )}
+
+        {/* Tab 2: Searchable User Registry */}
         {activeTab === 'users' && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="relative w-full sm:w-80">
+              <div className="relative w-full sm:w-96 font-mono text-xs">
                 <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search user by name or email…"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-primary/50"
+                  placeholder="Search user by name, email, or UID…"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white placeholder:text-slate-600 focus:outline-none focus:border-cyan-500"
                 />
               </div>
               <span className="text-xs text-slate-400 font-mono">
-                Showing {filteredUsers.length} of {users.length} accounts
+                Showing {filteredUsers.length} of {users.length} trader accounts
               </span>
             </div>
 
             {loading ? (
-              <div className="flex justify-center items-center py-20 text-primary">
+              <div className="flex justify-center items-center py-20 text-cyan-400">
                 <Loader2 className="w-6 h-6 animate-spin" />
               </div>
             ) : filteredUsers.length === 0 ? (
-              <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-12 text-center text-slate-500 text-sm">
+              <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-12 text-center text-slate-500 text-sm font-mono">
                 No user accounts found matching your search query.
               </div>
             ) : (
@@ -470,26 +452,26 @@ export default function AdminPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(i * 0.02, 0.3) }}
                     onClick={() => setSelectedUser(u)}
-                    className="w-full flex items-center gap-3 bg-slate-950/70 border border-slate-800/90 hover:border-primary/50 rounded-2xl p-4 transition-all text-left group cursor-pointer"
+                    className="w-full flex items-center gap-3 bg-slate-950/70 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-4 transition-all text-left group cursor-pointer"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 text-primary font-bold font-mono text-sm group-hover:scale-105 transition-transform">
+                    <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0 text-cyan-400 font-bold font-mono text-sm group-hover:scale-105 transition-transform">
                       {u.fullName.slice(0, 2).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <p className="text-sm font-semibold text-white truncate">{u.fullName}</p>
                         {u.title && (
-                          <span className="bg-primary/20 text-primary font-mono text-[9px] px-1.5 py-0.5 rounded border border-primary/30 shrink-0">
+                          <span className="bg-cyan-500/20 text-cyan-400 font-mono text-[9px] px-1.5 py-0.5 rounded border border-cyan-500/30 shrink-0">
                             {u.title}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-400 truncate">{u.email}</p>
+                      <p className="text-xs text-slate-400 truncate font-mono">{u.email}</p>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="font-mono text-xs font-bold text-white">{fmt(u.virtualBalance)}</p>
+                    <div className="text-right shrink-0 font-mono">
+                      <p className="text-xs font-bold text-white">{fmt(u.virtualBalance)}</p>
                       <p
-                        className={`font-mono text-[10px] ${
+                        className={`text-[10px] ${
                           u.totalProfitLoss >= 0 ? 'text-emerald-400' : 'text-red-400'
                         }`}
                       >
@@ -497,7 +479,7 @@ export default function AdminPage() {
                         {fmt(u.totalProfitLoss)}
                       </p>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-primary transition-colors shrink-0" />
+                    <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-cyan-400 transition-colors shrink-0" />
                   </motion.button>
                 ))}
               </div>
@@ -505,89 +487,60 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Tab 2: Deploy Stocks */}
-        {activeTab === 'deploy' && (
-          <div className="max-w-2xl mx-auto">
-            <AddStockForm />
-          </div>
-        )}
+        {/* Tab 3: Notifications & Broadcasts */}
+        {activeTab === 'notifications' && <AdminNotificationCenter users={users} />}
 
-        {/* Tab 3: System Engine Health */}
-        {activeTab === 'system' && (
-          <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-6 space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div className="flex items-center gap-3">
-                <Terminal className="w-5 h-5 text-primary" />
-                <div>
-                  <h2 className="text-base font-bold text-white">Real-Time Market Engine</h2>
-                  <p className="text-xs text-slate-400">
-                    Background simulation loop feed metrics
-                  </p>
-                </div>
-              </div>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-800/60 text-emerald-400 text-xs font-mono flex items-center gap-1.5">
-                <Zap className="w-3 h-3 animate-pulse" /> Live Engine Active
-              </span>
-            </div>
+        {/* Tab 4: Support Ticket System */}
+        {activeTab === 'support' && <AdminSupportManager />}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-xl space-y-1">
-                <p className="font-mono text-[10px] text-slate-400 uppercase">Tick Interval</p>
-                <p className="font-mono text-lg font-bold text-white">2,000 ms</p>
-                <p className="text-[11px] text-slate-500">Sub-second price update frequency</p>
-              </div>
+        {/* Tab 5: Reports & Exports */}
+        {activeTab === 'reports' && <AdminReportsManager users={users} />}
 
-              <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-xl space-y-1">
-                <p className="font-mono text-[10px] text-slate-400 uppercase">Tracked Instruments</p>
-                <p className="font-mono text-lg font-bold text-white">{allAssets.length} Assets</p>
-                <p className="text-[11px] text-slate-500">Stocks, Indices, Commodities, Forex</p>
-              </div>
+        {/* Tab 6: System Settings & Engine */}
+        {activeTab === 'settings' && <AdminSystemSettings />}
 
-              <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-xl space-y-1">
-                <p className="font-mono text-[10px] text-slate-400 uppercase">Database Sync</p>
-                <p className="font-mono text-lg font-bold text-emerald-400">Firestore Rules Ready</p>
-                <p className="text-[11px] text-slate-500">Real-time snapshots enabled</p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="font-mono text-xs uppercase tracking-wider text-slate-400">
-                Active Market Instruments ({allAssets.length})
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                {allAssets.map((asset) => (
-                  <div
-                    key={asset.symbol}
-                    className="bg-slate-900/90 border border-slate-800/80 p-2.5 rounded-xl text-xs space-y-1"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-white">{asset.symbol}</span>
-                      <span
-                        className={`font-mono text-[10px] ${
-                          asset.change >= 0 ? 'text-emerald-400' : 'text-red-400'
-                        }`}
-                      >
-                        {asset.change >= 0 ? '+' : ''}
-                        {asset.changePercent.toFixed(2)}%
-                      </span>
-                    </div>
-                    <p className="font-mono text-slate-300">₹{asset.price.toFixed(2)}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Tab 7: Security & Audit Logs */}
+        {activeTab === 'security' && <AdminSecurityManager />}
       </main>
 
-      {/* Selected User Action Drawer */}
+      {/* Selected User Full Profile Modal */}
       {selectedUser && (
-        <AdminUserDetailSheet
+        <AdminUserDetailModal
           user={selectedUser}
           onClose={() => setSelectedUser(null)}
           onUpdated={() => loadUsers(true)}
         />
       )}
+
+      {/* Inactivity Warning Modal */}
+      <AnimatePresence>
+        {showInactivityWarning && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 font-sans"
+          >
+            <div className="bg-[#070b14] border border-amber-500/40 rounded-2xl p-6 max-w-sm w-full text-center space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto">
+                <AlertTriangle className="w-6 h-6 animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Inactivity Session Warning</h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Your administrative session has been idle. You will be automatically logged out in 60 seconds.
+                </p>
+              </div>
+              <button
+                onClick={resetActivity}
+                className="w-full py-2.5 rounded-xl bg-cyan-500 text-black font-mono font-bold text-xs uppercase hover:bg-cyan-400 transition-all cursor-pointer"
+              >
+                Keep Me Logged In
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

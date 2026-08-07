@@ -7,6 +7,7 @@ import { AIDailyTip } from '@/components/dashboard/AIDailyTip';
 import { Watchlist } from '@/components/dashboard/Watchlist';
 import { BottomNav } from '@/components/dashboard/BottomNav';
 import { EmailVerificationBanner } from '@/components/dashboard/EmailVerificationBanner';
+import { QuickActionsMenu } from '@/components/dashboard/QuickActionsMenu';
 
 export default function DashboardPage() {
   return (
@@ -20,6 +21,7 @@ export default function DashboardPage() {
         <AIDailyTip />
         <Watchlist />
       </main>
+      <QuickActionsMenu />
       <BottomNav />
     </div>
   );

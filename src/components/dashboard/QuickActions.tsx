@@ -1,31 +1,57 @@
 import { useLocation } from 'wouter';
-import { TrendingUp, BarChart2, PieChart, BookOpen } from 'lucide-react';
+import {
+  TrendingUp,
+  Compass,
+  Star,
+  Bell,
+  Calendar,
+  BarChart2,
+  Trophy,
+  BookOpen,
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export function QuickActions() {
   const [, setLocation] = useLocation();
 
   const actions = [
-    { icon: TrendingUp, label: 'Paper Trade', active: true, path: '/trade' },
-    { icon: BarChart2, label: 'Markets', active: false, path: '/markets' },
-    { icon: PieChart, label: 'Portfolio', active: false, path: '/portfolio' },
-    { icon: BookOpen, label: 'Learn', active: false, path: '/learn' },
+    { icon: TrendingUp, label: 'Trade', active: true, path: '/trade' },
+    { icon: Compass, label: 'Market Hub', active: false, path: '/market-hub' },
+    { icon: Star, label: 'Watchlists', active: false, path: '/watchlist' },
+    { icon: Bell, label: 'Price Alerts', active: false, path: '/alerts' },
+    { icon: Calendar, label: 'Calendar', active: false, path: '/calendar' },
+    { icon: BarChart2, label: 'Analytics', active: false, path: '/statistics' },
+    { icon: Trophy, label: 'Badges', active: false, path: '/achievements' },
+    { icon: BookOpen, label: 'Academy', active: false, path: '/learn' },
   ];
 
   return (
     <div className="space-y-3">
-      <h3 className="text-xs text-muted-foreground uppercase font-mono tracking-wider px-1">Quick Actions</h3>
-      <div className="grid grid-cols-4 gap-3">
+      <h3 className="text-xs text-muted-foreground uppercase font-mono tracking-wider px-1">
+        Quick Hub Actions
+      </h3>
+      <div className="grid grid-cols-4 gap-2.5">
         {actions.map((action) => (
           <motion.button
             key={action.label}
-            whileTap={{ scale: 0.97 }}
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setLocation(action.path)}
-            className="flex flex-col items-center justify-center gap-2 py-3 bg-card border border-border rounded-xl transition-colors hover:bg-secondary/50"
+            className="group flex flex-col items-center justify-center gap-1.5 py-3 px-1 bg-card/80 backdrop-blur-xl border border-border/70 hover:border-primary/40 rounded-2xl transition-all shadow-sm hover:shadow-[0_4px_16px_rgba(0,210,210,0.1)] cursor-pointer"
             data-testid={`action-${action.label.toLowerCase().replace(' ', '-')}`}
           >
-            <action.icon className={`w-5 h-5 ${action.active ? 'text-primary' : 'text-muted-foreground'}`} />
-            <span className="text-[10px] font-medium text-foreground whitespace-nowrap">{action.label}</span>
+            <div
+              className={`p-2 rounded-xl border transition-all ${
+                action.active
+                  ? 'bg-primary/15 text-primary border-primary/30'
+                  : 'bg-muted/50 text-muted-foreground group-hover:text-primary group-hover:bg-primary/10 border-border/50'
+              }`}
+            >
+              <action.icon className="w-4 h-4" />
+            </div>
+            <span className="text-[10px] font-mono font-semibold text-foreground truncate max-w-full">
+              {action.label}
+            </span>
           </motion.button>
         ))}
       </div>
