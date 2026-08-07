@@ -9,10 +9,12 @@ import {
   Wallet,
   ArrowUpRight,
   Star,
-  Compass,
+  Layers,
+  Sparkles,
+  Target,
+  Coins,
+  FileText,
   Briefcase,
-  AlertCircle,
-  CheckCircle2,
 } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,6 +22,7 @@ import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { triggerHaptic } from '@/lib/haptics';
 
 export function QuickActionsMenu() {
   const [, setLocation] = useLocation();
@@ -32,7 +35,10 @@ export function QuickActionsMenu() {
   const [amountInput, setAmountInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const toggleMenu = () => setIsOpen((prev) => !prev);
+  const toggleMenu = () => {
+    triggerHaptic('light');
+    setIsOpen((prev) => !prev);
+  };
 
   const handleDeposit = async () => {
     const num = parseFloat(amountInput);
@@ -100,7 +106,7 @@ export function QuickActionsMenu() {
   const menuActions = [
     {
       id: 'buy',
-      label: 'Buy Asset',
+      label: 'Buy',
       icon: TrendingUp,
       color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
       action: () => {
@@ -110,19 +116,19 @@ export function QuickActionsMenu() {
     },
     {
       id: 'sell',
-      label: 'Sell Asset',
+      label: 'Sell',
       icon: TrendingDown,
       color: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
       action: () => {
         setIsOpen(false);
-        setLocation('/portfolio');
+        setLocation('/trade');
       },
     },
     {
       id: 'deposit',
       label: 'Add Funds',
       icon: Wallet,
-      color: 'bg-primary/20 text-primary border-primary/30',
+      color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
       action: () => {
         setIsOpen(false);
         setModalType('deposit');
@@ -149,150 +155,141 @@ export function QuickActionsMenu() {
       },
     },
     {
-      id: 'market_hub',
-      label: 'Market Hub',
-      icon: Compass,
-      color: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-      action: () => {
-        setIsOpen(false);
-        setLocation('/market-hub');
-      },
-    },
-    {
       id: 'portfolio',
       label: 'Portfolio',
       icon: Briefcase,
-      color: 'bg-teal-500/20 text-teal-400 border-teal-500/30',
+      color: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
       action: () => {
         setIsOpen(false);
         setLocation('/portfolio');
+      },
+    },
+    {
+      id: 'my_assets',
+      label: 'My Assets',
+      icon: Layers,
+      color: 'bg-teal-500/20 text-teal-400 border-teal-500/30',
+      action: () => {
+        setIsOpen(false);
+        setLocation('/my-assets');
+      },
+    },
+    {
+      id: 'insights',
+      label: 'Insights',
+      icon: Sparkles,
+      color: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+      action: () => {
+        setIsOpen(false);
+        setLocation('/insights');
+      },
+    },
+    {
+      id: 'goals',
+      label: 'Goals',
+      icon: Target,
+      color: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+      action: () => {
+        setIsOpen(false);
+        setLocation('/goals');
       },
     },
   ];
 
   return (
     <>
+      {/* Floating Backdrop */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsOpen(false)}
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Floating Speed Dial Container */}
-      <div className="fixed bottom-20 right-4 z-50 flex flex-col items-end">
+      <div className="fixed bottom-20 right-4 sm:right-8 z-50 flex flex-col items-end">
         <AnimatePresence>
           {isOpen && (
             <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.9 }}
-              transition={{ duration: 0.2 }}
-              className="flex flex-col items-end gap-2.5 mb-3"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="mb-3 p-3 rounded-3xl bg-slate-900/95 border border-slate-800 backdrop-blur-xl shadow-2xl grid grid-cols-3 gap-2 w-72"
             >
-              {menuActions.map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <motion.button
-                    key={item.id}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ delay: index * 0.03 }}
-                    onClick={item.action}
-                    className="flex items-center gap-3 group cursor-pointer"
-                  >
-                    <span className="px-3 py-1 rounded-xl bg-card/90 backdrop-blur-md border border-border text-foreground text-xs font-semibold shadow-lg group-hover:scale-105 transition-transform">
-                      {item.label}
-                    </span>
-                    <div
-                      className={`w-11 h-11 rounded-2xl flex items-center justify-center border shadow-lg backdrop-blur-xl group-hover:scale-110 transition-transform ${item.color}`}
-                    >
-                      <Icon className="w-5 h-5" />
-                    </div>
-                  </motion.button>
-                );
-              })}
+              {menuActions.map((act) => (
+                <button
+                  key={act.id}
+                  onClick={() => {
+                    triggerHaptic('light');
+                    act.action();
+                  }}
+                  className="flex flex-col items-center justify-center p-2.5 rounded-2xl hover:bg-slate-800/80 transition-all group"
+                >
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border ${act.color} mb-1 group-hover:scale-105 transition-transform`}>
+                    <act.icon className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-200">{act.label}</span>
+                </button>
+              ))}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Primary Toggle FAB */}
+        {/* Floating Trigger Button */}
         <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileTap={{ scale: 0.92 }}
           onClick={toggleMenu}
-          className={`w-14 h-14 rounded-2xl flex items-center justify-center text-primary-foreground shadow-[0_8px_30px_rgba(0,210,210,0.4)] transition-all cursor-pointer ${
+          className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all border ${
             isOpen
-              ? 'bg-rose-500 text-white rotate-45'
-              : 'bg-primary hover:brightness-110'
+              ? 'bg-rose-500 text-white border-rose-400 rotate-45'
+              : 'bg-emerald-500 text-white border-emerald-400 shadow-emerald-500/25 hover:bg-emerald-600'
           }`}
-          aria-label="Quick Actions Menu"
         >
-          {isOpen ? <X className="w-6 h-6" /> : <Plus className="w-7 h-7" />}
+          <Plus className="w-7 h-7" />
         </motion.button>
       </div>
 
-      {/* Funds Modal (Deposit / Withdraw) */}
-      <Dialog open={modalType !== null} onOpenChange={(open) => !open && setModalType(null)}>
-        <DialogContent className="sm:max-w-[400px] bg-card/95 backdrop-blur-2xl border-primary/20 rounded-3xl p-6">
+      {/* Deposit / Withdraw Modal */}
+      <Dialog open={modalType !== null} onOpenChange={() => setModalType(null)}>
+        <DialogContent className="max-w-md bg-slate-900 border-slate-800 text-white p-6 rounded-3xl">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold flex items-center gap-2">
-              <Wallet className="w-5 h-5 text-primary" />
-              {modalType === 'deposit' ? 'Add Virtual Funds' : 'Withdraw Funds'}
+            <DialogTitle className="text-lg font-extrabold flex items-center gap-2">
+              <Wallet className="w-5 h-5 text-emerald-400" />
+              {modalType === 'deposit' ? 'Add Funds to Virtual Balance' : 'Withdraw Funds'}
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
+            <DialogDescription className="text-xs text-slate-400">
               {modalType === 'deposit'
-                ? 'Top up your virtual trading balance instantly.'
-                : 'Withdraw funds from your available virtual wallet.'}
+                ? 'Add funds to practice paper trading risk-free.'
+                : 'Withdraw practice funds back into reserve.'}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 pt-2">
-            <div className="p-3 rounded-2xl bg-muted/50 border border-border flex items-center justify-between">
-              <span className="text-xs text-muted-foreground font-mono">Current Balance</span>
-              <span className="text-sm font-bold font-mono text-primary">
-                ₹{(profile?.virtualBalance ?? 0).toLocaleString('en-IN')}
-              </span>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">
-                Enter Amount (₹)
+            <div>
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Amount (₹)
               </label>
               <input
                 type="number"
-                placeholder="e.g. 25000"
                 value={amountInput}
                 onChange={(e) => setAmountInput(e.target.value)}
-                className="w-full h-11 px-4 rounded-xl bg-background border border-border focus:border-primary text-foreground font-mono text-sm outline-none transition-colors"
+                placeholder="50000"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-800/50 text-white text-sm font-bold focus:outline-none focus:border-emerald-500"
               />
             </div>
 
-            {/* Quick preset amounts */}
-            <div className="flex items-center gap-2">
-              {[10000, 25000, 50000, 100000].map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => setAmountInput(preset.toString())}
-                  className="flex-1 py-1.5 bg-secondary hover:bg-secondary/80 rounded-lg text-[10px] font-mono font-medium text-foreground transition-colors cursor-pointer"
-                >
-                  +₹{(preset / 1000).toFixed(0)}k
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setModalType(null)}
-                className="flex-1 py-2.5 rounded-xl bg-secondary text-secondary-foreground font-semibold text-xs hover:bg-secondary/80 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={modalType === 'deposit' ? handleDeposit : handleWithdraw}
-                className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-xs shadow-[0_0_15px_rgba(0,210,210,0.3)] hover:brightness-110 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                {isSubmitting ? 'Processing...' : modalType === 'deposit' ? 'Confirm Deposit' : 'Confirm Withdrawal'}
-              </button>
-            </div>
+            <button
+              disabled={isSubmitting}
+              onClick={modalType === 'deposit' ? handleDeposit : handleWithdraw}
+              className="w-full py-3 rounded-2xl bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-600 transition-all shadow-md disabled:opacity-50"
+            >
+              {isSubmitting ? 'Processing...' : modalType === 'deposit' ? 'Confirm Deposit' : 'Confirm Withdrawal'}
+            </button>
           </div>
         </DialogContent>
       </Dialog>

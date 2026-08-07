@@ -3,6 +3,8 @@ import { ALL_ASSETS, type Asset } from '@/data/marketData';
 import { subscribeToAdminStocks, type AdminStockDoc } from '@/lib/adminStocksService';
 import { marketEngine } from '@/lib/marketEngine/engine';
 
+export type { Asset };
+
 let adminAssetsCache: Asset[] = [];
 const cacheListeners = new Set<() => void>();
 let subscribed = false;

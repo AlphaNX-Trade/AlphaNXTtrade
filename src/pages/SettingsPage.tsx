@@ -1,58 +1,66 @@
 import { useLocation } from 'wouter';
-import { ChevronLeft, Volume2, Moon, Sun, Bell, HelpCircle, ChevronRight } from 'lucide-react';
+import { ChevronLeft, Volume2, Moon, Sun, Bell, HelpCircle, ChevronRight, ShieldCheck, Heart, Layout, Sparkles } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useSettings } from '@/hooks/useSettings';
 import { useTheme } from '@/contexts/ThemeContext';
+import { SecurityManagementSection } from '@/components/profile/SecurityManagementSection';
+import { usePersonalization } from '@/hooks/usePersonalization';
+import { triggerHaptic } from '@/lib/haptics';
+
+const SECTOR_OPTIONS = ['Technology', 'Banking', 'Energy', 'Automobile', 'Pharmaceuticals', 'Metals', 'FMCG'];
 
 export default function SettingsPage() {
   const [, setLocation] = useLocation();
   const { settings, settingsLoading, updateSetting } = useSettings();
   const { theme, setTheme } = useTheme();
+  const { settings: persSettings, toggleSector, toggleWidget } = usePersonalization();
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col max-w-[480px] mx-auto pb-6">
-      <header className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-background/95 backdrop-blur border-b border-border h-14 flex items-center justify-between px-4 z-40">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col max-w-4xl mx-auto pb-12">
+      <header className="sticky top-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 h-14 flex items-center justify-between px-4 z-40">
         <button
           onClick={() => setLocation('/profile')}
-          className="text-muted-foreground hover:text-foreground transition-colors p-1 -ml-1"
+          className="text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors p-1"
           aria-label="Back to profile"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <span className="font-semibold text-base text-foreground">Settings</span>
-        <div className="w-6" aria-hidden />
+        <span className="font-bold text-base">App Settings & Security</span>
+        <div className="w-6" />
       </header>
 
-      <main className="flex-1 overflow-y-auto px-4 pt-[72px] pb-4 space-y-4">
-        <div className="space-y-2">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-1">
-            Appearance
-          </p>
-          <div className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3.5">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              {theme === 'dark' ? (
-                <Moon className="w-4 h-4 text-primary" />
-              ) : (
-                <Sun className="w-4 h-4 text-primary" />
-              )}
+      <main className="flex-1 p-4 space-y-6">
+        {/* Appearance & Theme Section */}
+        <div className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-4">
+          <h3 className="text-base font-bold flex items-center gap-2">
+            <Moon className="w-5 h-5 text-indigo-500" /> Theme & Appearance
+          </h3>
+
+          <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+            <div>
+              <div className="font-bold text-sm">Theme Preset</div>
+              <div className="text-xs text-slate-500">Switch between dark and light workspace themes</div>
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">Theme</p>
-              <p className="text-[11px] text-muted-foreground">Choose dark or light mode</p>
-            </div>
-            <div className="flex bg-secondary/50 rounded-lg p-0.5 gap-0.5">
+
+            <div className="flex bg-slate-200 dark:bg-slate-800 rounded-xl p-1 gap-1">
               <button
-                onClick={() => setTheme('dark')}
-                className={`px-3 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-wider transition-colors ${
-                  theme === 'dark' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+                onClick={() => {
+                  triggerHaptic('light');
+                  setTheme('dark');
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  theme === 'dark' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500'
                 }`}
               >
                 Dark
               </button>
               <button
-                onClick={() => setTheme('light')}
-                className={`px-3 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-wider transition-colors ${
-                  theme === 'light' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+                onClick={() => {
+                  triggerHaptic('light');
+                  setTheme('light');
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  theme === 'light' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
                 }`}
               >
                 Light
@@ -61,54 +69,64 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-1">
-            Experience
-          </p>
-          {settingsLoading ? (
-            <div className="h-16 bg-card border border-border rounded-xl animate-pulse" />
-          ) : (
-            <div className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3.5">
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <Volume2 className="w-4 h-4 text-primary" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">Sound Effects</p>
-                <p className="text-[11px] text-muted-foreground">Trade confirmations, achievements</p>
-              </div>
-              <Switch
-                checked={settings?.soundEffectsEnabled ?? true}
-                onCheckedChange={(checked) => updateSetting({ soundEffectsEnabled: checked })}
-              />
+        {/* Personalization Section */}
+        <div className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-4">
+          <h3 className="text-base font-bold flex items-center gap-2">
+            <Heart className="w-5 h-5 text-rose-500" /> Personalization & Favorite Sectors
+          </h3>
+
+          <div>
+            <div className="text-xs font-bold text-slate-500 uppercase mb-2">Favorite Sectors</div>
+            <div className="flex flex-wrap gap-2">
+              {SECTOR_OPTIONS.map((sec) => {
+                const isFav = persSettings.favoriteSectors.includes(sec);
+                return (
+                  <button
+                    key={sec}
+                    onClick={() => {
+                      triggerHaptic('light');
+                      toggleSector(sec);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                      isFav
+                        ? 'bg-rose-500/10 border-rose-500 text-rose-500'
+                        : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    {isFav ? '❤️ ' : ''}
+                    {sec}
+                  </button>
+                );
+              })}
             </div>
-          )}
+          </div>
+
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="text-xs font-bold text-slate-500 uppercase mb-3">Dashboard Widget Visibility</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-semibold">
+              {[
+                { key: 'healthScore', label: 'Portfolio Health Score' },
+                { key: 'dailySummary', label: 'Daily Market Summary' },
+                { key: 'goalProgress', label: 'Financial Goal Tracker' },
+                { key: 'investmentIdeas', label: 'AI Investment Suggestions' },
+              ].map((w) => (
+                <div key={w.key} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                  <span>{w.label}</span>
+                  <Switch
+                    checked={persSettings.dashboardWidgets[w.key as keyof typeof persSettings.dashboardWidgets]}
+                    onCheckedChange={() => {
+                      triggerHaptic('light');
+                      toggleWidget(w.key as any);
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-1">
-            More
-          </p>
-          <button
-            onClick={() => setLocation('/notifications')}
-            className="w-full flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3.5 hover:border-primary/30 transition-colors"
-          >
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <Bell className="w-4 h-4 text-primary" />
-            </div>
-            <span className="flex-1 text-left text-sm font-medium text-foreground">Notifications</span>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-          </button>
-          <button
-            onClick={() => setLocation('/help')}
-            className="w-full flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3.5 hover:border-primary/30 transition-colors"
-          >
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <HelpCircle className="w-4 h-4 text-primary" />
-            </div>
-            <span className="flex-1 text-left text-sm font-medium text-foreground">Help</span>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </div>
+        {/* V6 Security Center */}
+        <SecurityManagementSection />
       </main>
     </div>
   );

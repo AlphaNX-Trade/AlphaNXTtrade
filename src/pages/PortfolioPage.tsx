@@ -1,5 +1,5 @@
 import { useLocation } from 'wouter';
-import { ChevronLeft, PieChart, History, BarChart2 } from 'lucide-react';
+import { ChevronLeft, PieChart, History, BarChart2, Layers, Sparkles, Target, Coins, FileText, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useHoldings } from '@/hooks/useHoldings';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -8,6 +8,7 @@ import { BottomNav } from '@/components/dashboard/BottomNav';
 import { MarketSkeleton } from '@/components/markets/MarketSkeleton';
 import { QuickActionsMenu } from '@/components/dashboard/QuickActionsMenu';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { V6PortfolioAnalytics } from '@/components/portfolio/V6PortfolioAnalytics';
 
 function SummaryStatCell({
   label,
@@ -64,16 +65,16 @@ export default function PortfolioPage() {
   const isLoading = profileLoading || holdingsLoading;
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col max-w-[480px] mx-auto pb-16">
+    <div className="min-h-[100dvh] bg-background flex flex-col max-w-4xl mx-auto pb-24">
       {/* Fixed header */}
-      <header className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-background/95 backdrop-blur border-b border-border h-14 flex items-center justify-between px-4 z-40">
+      <header className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl bg-background/95 backdrop-blur border-b border-border h-14 flex items-center justify-between px-4 z-40">
         <button
           onClick={() => setLocation('/dashboard')}
           className="text-muted-foreground hover:text-foreground transition-colors p-1 -ml-1"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <span className="font-semibold text-base text-foreground">Portfolio</span>
+        <span className="font-semibold text-base text-foreground">V7 Portfolio Ecosystem</span>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setLocation('/statistics')}
@@ -146,6 +147,39 @@ export default function PortfolioPage() {
             </div>
           </motion.div>
         )}
+
+        {/* V7 Premium Financial Ecosystem Quick Hub */}
+        <div className="space-y-2">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            V7 Financial Ecosystem Modules
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            {[
+              { label: 'My Assets', path: '/my-assets', icon: Layers, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+              { label: 'Smart Insights', path: '/insights', icon: Sparkles, color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
+              { label: 'Financial Goals', path: '/goals', icon: Target, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+              { label: 'Dividend Center', path: '/dividends', icon: Coins, color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
+              { label: 'Transaction Center', path: '/transaction-center', icon: FileText, color: 'text-teal-400 bg-teal-500/10 border-teal-500/20' },
+              { label: 'Market Calendar', path: '/calendar', icon: Calendar, color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
+            ].map((mod) => (
+              <button
+                key={mod.path}
+                onClick={() => setLocation(mod.path)}
+                className="p-3.5 rounded-xl border bg-card/60 hover:bg-card border-border/80 hover:border-primary/40 flex items-center gap-2.5 transition-all text-left group"
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${mod.color}`}>
+                  <mod.icon className="w-4 h-4" />
+                </div>
+                <span className="font-semibold text-xs text-foreground group-hover:text-primary transition-colors">
+                  {mod.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* V6 Advanced Portfolio Analytics */}
+        <V6PortfolioAnalytics />
 
         {/* Holdings section */}
         <div className="space-y-3">

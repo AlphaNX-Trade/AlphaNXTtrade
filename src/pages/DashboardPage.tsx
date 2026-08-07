@@ -8,15 +8,17 @@ import { Watchlist } from '@/components/dashboard/Watchlist';
 import { BottomNav } from '@/components/dashboard/BottomNav';
 import { EmailVerificationBanner } from '@/components/dashboard/EmailVerificationBanner';
 import { QuickActionsMenu } from '@/components/dashboard/QuickActionsMenu';
+import { V6SmartDashboardWidgets } from '@/components/dashboard/V6SmartDashboardWidgets';
 
 export default function DashboardPage() {
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col max-w-[480px] mx-auto relative pb-24">
+    <div className="min-h-[100dvh] bg-background flex flex-col max-w-5xl mx-auto relative pb-24">
       <Header />
       <main className="flex-1 overflow-y-auto px-4 pt-20 pb-6 space-y-7">
         <EmailVerificationBanner />
         <PortfolioCard />
         <QuickActions />
+        <V6SmartDashboardWidgets />
         <MarketOverview />
         <AIDailyTip />
         <Watchlist />

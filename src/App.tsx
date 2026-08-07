@@ -10,6 +10,7 @@ import { isAdminEmail } from '@/lib/adminConfig';
 import { CandlestickPatternBg } from '@/components/ui/CandlestickPatternBg';
 import { PwaInstallPrompt } from '@/components/pwa/PwaInstallPrompt';
 import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
+import { AppLockContainer } from '@/components/security/AppLockContainer';
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 
@@ -46,6 +47,11 @@ const WatchlistPage = lazy(() => import('@/pages/WatchlistPage'));
 const AlertsPage = lazy(() => import('@/pages/AlertsPage'));
 const CalendarPage = lazy(() => import('@/pages/CalendarPage'));
 const StatisticsPage = lazy(() => import('@/pages/StatisticsPage'));
+const MyAssetsPage = lazy(() => import('@/pages/MyAssetsPage'));
+const SmartInsightsPage = lazy(() => import('@/pages/SmartInsightsPage'));
+const GoalsPage = lazy(() => import('@/pages/GoalsPage'));
+const DividendCenterPage = lazy(() => import('@/pages/DividendCenterPage'));
+const TransactionCenterPage = lazy(() => import('@/pages/TransactionCenterPage'));
 
 const queryClient = new QueryClient();
 
@@ -457,6 +463,66 @@ function ProtectedStatisticsPage() {
   return <StatisticsPage />;
 }
 
+function ProtectedMyAssetsPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <MyAssetsPage />;
+}
+
+function ProtectedSmartInsightsPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <SmartInsightsPage />;
+}
+
+function ProtectedGoalsPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <GoalsPage />;
+}
+
+function ProtectedDividendCenterPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <DividendCenterPage />;
+}
+
+function ProtectedTransactionCenterPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <TransactionCenterPage />;
+}
+
 function Router() {
   return (
     <Suspense fallback={<LoadingScreen />}>
@@ -489,6 +555,11 @@ function Router() {
         <Route path="/alerts" component={ProtectedAlertsPage} />
         <Route path="/calendar" component={ProtectedCalendarPage} />
         <Route path="/statistics" component={ProtectedStatisticsPage} />
+        <Route path="/my-assets" component={ProtectedMyAssetsPage} />
+        <Route path="/insights" component={ProtectedSmartInsightsPage} />
+        <Route path="/goals" component={ProtectedGoalsPage} />
+        <Route path="/dividends" component={ProtectedDividendCenterPage} />
+        <Route path="/transaction-center" component={ProtectedTransactionCenterPage} />
         <Route path="/learn/:topicId/quiz" component={ProtectedQuizPage} />
         <Route path="/learn/:topicId" component={ProtectedTopicLessonPage} />
         <Route component={NotFound} />
@@ -505,6 +576,7 @@ function App() {
           <TooltipProvider>
             <WouterRouter base={((import.meta as any).env?.BASE_URL || '/').replace(/\/$/, '')}>
               <OfflineIndicator />
+              <AppLockContainer />
               <Router />
               <PwaInstallPrompt />
             </WouterRouter>

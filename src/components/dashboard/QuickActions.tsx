@@ -1,12 +1,12 @@
 import { useLocation } from 'wouter';
 import {
   TrendingUp,
-  Compass,
-  Star,
-  Bell,
+  Layers,
+  Sparkles,
+  Target,
+  Coins,
+  FileText,
   Calendar,
-  BarChart2,
-  Trophy,
   BookOpen,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -16,19 +16,19 @@ export function QuickActions() {
 
   const actions = [
     { icon: TrendingUp, label: 'Trade', active: true, path: '/trade' },
-    { icon: Compass, label: 'Market Hub', active: false, path: '/market-hub' },
-    { icon: Star, label: 'Watchlists', active: false, path: '/watchlist' },
-    { icon: Bell, label: 'Price Alerts', active: false, path: '/alerts' },
+    { icon: Layers, label: 'My Assets', active: false, path: '/my-assets' },
+    { icon: Sparkles, label: 'Insights', active: false, path: '/insights' },
+    { icon: Target, label: 'Goals', active: false, path: '/goals' },
+    { icon: Coins, label: 'Dividends', active: false, path: '/dividends' },
+    { icon: FileText, label: 'Ledger', active: false, path: '/transaction-center' },
     { icon: Calendar, label: 'Calendar', active: false, path: '/calendar' },
-    { icon: BarChart2, label: 'Analytics', active: false, path: '/statistics' },
-    { icon: Trophy, label: 'Badges', active: false, path: '/achievements' },
     { icon: BookOpen, label: 'Academy', active: false, path: '/learn' },
   ];
 
   return (
     <div className="space-y-3">
       <h3 className="text-xs text-muted-foreground uppercase font-mono tracking-wider px-1">
-        Quick Hub Actions
+        V7 Ecosystem Quick Hub
       </h3>
       <div className="grid grid-cols-4 gap-2.5">
         {actions.map((action) => (

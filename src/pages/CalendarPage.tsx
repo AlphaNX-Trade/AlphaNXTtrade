@@ -7,334 +7,284 @@ import {
   Plus,
   Trash2,
   CheckCircle2,
-  TrendingUp,
-  TrendingDown,
-  Gift,
-  PartyPopper,
   Clock,
   Sparkles,
+  Building2,
+  Rocket,
+  Globe2,
+  Bell,
+  X,
 } from 'lucide-react';
 import { useTransactionHistory } from '@/hooks/useTransactionHistory';
 import { BottomNav } from '@/components/dashboard/BottomNav';
 import { QuickActionsMenu } from '@/components/dashboard/QuickActionsMenu';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/lib/formatters';
+import { triggerHaptic } from '@/lib/haptics';
 
 // Indian Market Holidays (NSE / BSE official calendar)
 const MARKET_HOLIDAYS = [
-  { date: '2026-01-26', name: 'Republic Day', type: 'Holiday' },
-  { date: '2026-03-08', name: 'Mahashivratri', type: 'Holiday' },
-  { date: '2026-03-25', name: 'Holi', type: 'Holiday' },
-  { date: '2026-04-03', name: 'Good Friday', type: 'Holiday' },
-  { date: '2026-04-14', name: 'Dr. Baba Saheb Ambedkar Jayanti', type: 'Holiday' },
-  { date: '2026-05-01', name: 'Maharashtra Day', type: 'Holiday' },
-  { date: '2026-08-15', name: 'Independence Day', type: 'Holiday' },
-  { date: '2026-10-02', name: 'Mahatma Gandhi Jayanti', type: 'Holiday' },
-  { date: '2026-11-01', name: 'Diwali Laxmi Pujan', type: 'Special Trading' },
-  { date: '2026-12-25', name: 'Christmas', type: 'Holiday' },
+  { date: '2026-01-26', name: 'Republic Day', day: 'Monday', type: 'Holiday' },
+  { date: '2026-03-08', name: 'Mahashivratri', day: 'Sunday', type: 'Holiday' },
+  { date: '2026-03-25', name: 'Holi', day: 'Wednesday', type: 'Holiday' },
+  { date: '2026-04-03', name: 'Good Friday', day: 'Friday', type: 'Holiday' },
+  { date: '2026-04-14', name: 'Dr. Baba Saheb Ambedkar Jayanti', day: 'Tuesday', type: 'Holiday' },
+  { date: '2026-05-01', name: 'Maharashtra Day', day: 'Friday', type: 'Holiday' },
+  { date: '2026-08-15', name: 'Independence Day', day: 'Saturday', type: 'Holiday' },
+  { date: '2026-10-02', name: 'Mahatma Gandhi Jayanti', day: 'Friday', type: 'Holiday' },
+  { date: '2026-11-01', name: 'Diwali Laxmi Pujan (Muhurat Trading)', day: 'Sunday', type: 'Special Trading' },
+  { date: '2026-12-25', name: 'Christmas', day: 'Friday', type: 'Holiday' },
 ];
 
-export interface PersonalReminder {
-  id: string;
-  title: string;
-  date: string;
-  completed: boolean;
-}
+const MARKET_TIMINGS = [
+  { session: 'Pre-Open Session', time: '09:00 AM – 09:15 AM', desc: 'Order entry, modification & price discovery' },
+  { session: 'Normal Trading Hours', time: '09:15 AM – 03:30 PM', desc: 'Continuous trading for Equities, F&O & Commodities' },
+  { session: 'Block Window Session', time: '08:45 AM & 02:05 PM', desc: 'Large institutional transactions' },
+  { session: 'Post-Closing Session', time: '03:40 PM – 04:00 PM', desc: 'Closing price trades & position settlements' },
+];
 
-const STORAGE_KEY_REMINDERS = 'alphanxt_calendar_reminders_v5';
+const UPCOMING_EARNINGS = [
+  { symbol: 'RELIANCE', company: 'Reliance Industries Ltd.', date: '14 Aug 2026', period: 'Q1 FY27', estimate: '₹22,400 Cr EPS' },
+  { symbol: 'TCS', company: 'Tata Consultancy Services', date: '18 Aug 2026', period: 'Q1 FY27', estimate: '₹12,800 Cr EPS' },
+  { symbol: 'HDFCBANK', company: 'HDFC Bank Ltd.', date: '22 Aug 2026', period: 'Q1 FY27', estimate: '₹17,500 Cr EPS' },
+  { symbol: 'INFY', company: 'Infosys Ltd.', date: '28 Aug 2026', period: 'Q1 FY27', estimate: '₹6,900 Cr EPS' },
+  { symbol: 'TATAMOTORS', company: 'Tata Motors Ltd.', date: '04 Sep 2026', period: 'Q1 FY27', estimate: '₹4,100 Cr EPS' },
+];
+
+const UPCOMING_IPOS = [
+  { name: 'Swiggy FoodTech Ltd.', priceBand: '₹371 – ₹390', openDate: '12 Aug 2026', closeDate: '14 Aug 2026', lotSize: '38 Shares', status: 'Bidding Open' },
+  { name: 'NSE India Ltd. (Mainboard)', priceBand: '₹1,250 – ₹1,300', openDate: '24 Aug 2026', closeDate: '27 Aug 2026', lotSize: '12 Shares', status: 'Upcoming' },
+  { name: 'Hyundai Motor India', priceBand: '₹1,860 – ₹1,960', openDate: '08 Sep 2026', closeDate: '10 Sep 2026', lotSize: '7 Shares', status: 'Announced' },
+];
+
+const ECONOMIC_EVENTS = [
+  { event: 'RBI Monetary Policy Decision', date: '12 Aug 2026', impact: 'High', details: 'Repo Rate Decision (Expected: Pause 6.50%)' },
+  { event: 'US Federal Reserve Interest Rate', date: '20 Aug 2026', impact: 'High', details: 'FOMC Rate Stance' },
+  { event: 'India CPI Inflation Data', date: '12 Aug 2026', impact: 'Medium', details: 'July Consumer Price Index' },
+  { event: 'India Industrial Production (IIP)', date: '14 Aug 2026', impact: 'Medium', details: 'Factory output index' },
+];
 
 export default function CalendarPage() {
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
   const { transactions } = useTransactionHistory(100);
 
-  const [reminders, setReminders] = useState<PersonalReminder[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_REMINDERS);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const [isAddReminderOpen, setIsAddReminderOpen] = useState(false);
-  const [reminderTitle, setReminderTitle] = useState('');
-  const [reminderDate, setReminderDate] = useState(new Date().toISOString().split('T')[0]);
-
-  // Map real trade dates
-  const tradeEvents = useMemo(() => {
-    if (!transactions) return [];
-    return transactions.map((t) => {
-      const dateStr = t.timestamp?.toDate
-        ? t.timestamp.toDate().toISOString().split('T')[0]
-        : new Date().toISOString().split('T')[0];
-
-      return {
-        id: t.id,
-        date: dateStr,
-        title: `${t.side === 'BUY' ? 'Bought' : 'Sold'} ${t.quantity} ${t.symbol}`,
-        subtitle: `₹${t.price} per share (Total: ₹${t.totalAmount.toLocaleString('en-IN')})`,
-        type: t.side,
-      };
-    });
-  }, [transactions]);
-
-  const handleAddReminder = () => {
-    if (!reminderTitle.trim()) {
-      toast({ title: 'Error', description: 'Reminder title cannot be empty', variant: 'destructive' });
-      return;
-    }
-
-    const newItem: PersonalReminder = {
-      id: `rem_${Date.now()}`,
-      title: reminderTitle,
-      date: reminderDate,
-      completed: false,
-    };
-
-    const updated = [newItem, ...reminders];
-    setReminders(updated);
-    localStorage.setItem(STORAGE_KEY_REMINDERS, JSON.stringify(updated));
-
-    setIsAddReminderOpen(false);
-    setReminderTitle('');
-    toast({ title: 'Reminder Set', description: `Saved reminder for ${reminderDate}` });
-  };
-
-  const toggleReminder = (id: string) => {
-    const updated = reminders.map((r) => (r.id === id ? { ...r, completed: !r.completed } : r));
-    setReminders(updated);
-    localStorage.setItem(STORAGE_KEY_REMINDERS, JSON.stringify(updated));
-  };
-
-  const deleteReminder = (id: string) => {
-    const updated = reminders.filter((r) => r.id !== id);
-    setReminders(updated);
-    localStorage.setItem(STORAGE_KEY_REMINDERS, JSON.stringify(updated));
-  };
+  const [activeTab, setActiveTab] = useState<'HOLIDAYS' | 'TIMINGS' | 'EARNINGS' | 'IPOS' | 'EVENTS'>('HOLIDAYS');
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col max-w-[480px] mx-auto relative pb-28">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-28">
       {/* Header */}
-      <header className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-card/90 backdrop-blur-2xl border-b border-border/80 h-14 flex items-center justify-between px-4 z-40">
+      <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 h-14 flex items-center justify-between px-4 max-w-5xl mx-auto">
         <button
           onClick={() => setLocation('/dashboard')}
-          className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-xl hover:bg-muted/80 cursor-pointer"
-          aria-label="Back to dashboard"
+          className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-
-        <div className="flex items-center gap-2">
-          <div className="p-1 rounded-lg bg-primary/10 text-primary border border-primary/20">
-            <CalendarIcon className="w-4 h-4" />
-          </div>
-          <span className="font-bold text-sm text-foreground tracking-tight">Portfolio Calendar</span>
-        </div>
-
-        <button
-          onClick={() => setIsAddReminderOpen(true)}
-          className="p-1.5 rounded-xl bg-primary text-primary-foreground font-semibold text-xs flex items-center gap-1 shadow-sm cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Reminder
-        </button>
+        <h1 className="font-bold text-base flex items-center gap-2">
+          <CalendarIcon className="w-4 h-4 text-emerald-500" />
+          Market Calendar & Events
+        </h1>
+        <div className="w-8" />
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto px-4 pt-18 pb-6 space-y-6">
-        {/* Personal Reminders Section */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-primary" />
-              Personal Investment Reminders
-            </h3>
-          </div>
+      <main className="max-w-5xl mx-auto px-4 pt-5 space-y-6">
+        {/* Calendar Hero Banner */}
+        <div className="p-6 rounded-3xl bg-gradient-to-br from-emerald-900 via-slate-900 to-slate-950 text-white border border-emerald-800/50 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          {reminders.length === 0 ? (
-            <div className="p-4 rounded-2xl bg-card/60 border border-border/60 text-center text-xs text-muted-foreground">
-              No upcoming reminders set. Tap "+ Reminder" above to add SIP dates or review notes.
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
+            <div>
+              <span className="text-xs uppercase tracking-widest text-emerald-400 font-mono font-bold flex items-center gap-1.5">
+                <Clock className="w-4 h-4" /> Live Market Schedule
+              </span>
+              <h2 className="text-2xl font-black mt-1">
+                NSE / BSE Trading Calendar
+              </h2>
+              <p className="text-xs text-slate-300 mt-1 max-w-md">
+                Stay updated with trading holidays, quarterly result announcements, initial public offerings (IPOs), and central bank monetary policy dates.
+              </p>
             </div>
-          ) : (
-            <div className="space-y-2">
-              {reminders.map((rem) => (
-                <div
-                  key={rem.id}
-                  className="bg-card/80 backdrop-blur-xl border border-border/80 rounded-2xl p-3.5 flex items-center justify-between gap-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => toggleReminder(rem.id)}
-                      className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors cursor-pointer ${
-                        rem.completed
-                          ? 'bg-primary border-primary text-primary-foreground'
-                          : 'border-border text-transparent'
-                      }`}
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                    </button>
 
+            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shrink-0 text-center">
+              <span className="text-xs text-slate-300 block font-medium">Market Status</span>
+              <span className="text-sm font-extrabold text-emerald-400 flex items-center justify-center gap-1.5 mt-0.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                Open (09:15 - 15:30 IST)
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs font-bold border-b border-slate-200 dark:border-slate-800">
+          {[
+            { id: 'HOLIDAYS', label: 'Trading Holidays' },
+            { id: 'TIMINGS', label: 'Market Timings' },
+            { id: 'EARNINGS', label: 'Earnings Calendar' },
+            { id: 'IPOS', label: 'IPO Calendar' },
+            { id: 'EVENTS', label: 'Economic Events' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                triggerHaptic('light');
+                setActiveTab(tab.id as any);
+              }}
+              className={`px-4 py-2.5 rounded-xl whitespace-nowrap transition-all ${
+                activeTab === tab.id
+                  ? 'bg-emerald-500 text-white font-extrabold shadow-xs'
+                  : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab 1: Trading Holidays */}
+        {activeTab === 'HOLIDAYS' && (
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Official NSE / BSE Holidays</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {MARKET_HOLIDAYS.map((hol, idx) => (
+                <div key={idx} className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-emerald-500 font-extrabold text-xs">
+                      {hol.date.substring(8, 10)}
+                    </div>
                     <div>
-                      <p
-                        className={`text-xs font-semibold ${
-                          rem.completed ? 'line-through text-muted-foreground' : 'text-foreground'
-                        }`}
-                      >
-                        {rem.title}
-                      </p>
-                      <p className="text-[10px] font-mono text-muted-foreground">{rem.date}</p>
+                      <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">{hol.name}</h4>
+                      <p className="text-xs text-slate-500">{hol.day} • {hol.date}</p>
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => deleteReminder(rem.id)}
-                    className="p-1 text-muted-foreground hover:text-rose-400 transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Real User Trade History Timeline */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              Recent Trade Execution Dates
-            </h3>
-          </div>
-
-          {tradeEvents.length === 0 ? (
-            <div className="p-4 rounded-2xl bg-card/60 border border-border/60 text-center text-xs text-muted-foreground">
-              No executed trades yet. Trades executed on Paper Trade will automatically populate here.
-            </div>
-          ) : (
-            <div className="space-y-2.5">
-              {tradeEvents.slice(0, 10).map((evt) => (
-                <div
-                  key={evt.id}
-                  className="bg-card/80 backdrop-blur-xl border border-border/80 rounded-2xl p-3.5 flex items-center justify-between gap-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
-                        evt.type === 'BUY'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
-                      }`}
-                    >
-                      {evt.type === 'BUY' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                    </div>
-
-                    <div>
-                      <p className="font-mono text-xs font-bold text-foreground">{evt.title}</p>
-                      <p className="text-[11px] text-muted-foreground">{evt.subtitle}</p>
-                    </div>
-                  </div>
-
-                  <span className="text-[10px] font-mono text-muted-foreground shrink-0">{evt.date}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Market Holidays List */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
-              <PartyPopper className="w-3.5 h-3.5 text-amber-400" />
-              Indian Market Holidays (NSE / BSE)
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 gap-2">
-            {MARKET_HOLIDAYS.map((hol, idx) => (
-              <div
-                key={idx}
-                className="bg-card/70 backdrop-blur-md border border-border/80 rounded-2xl p-3 flex items-center justify-between"
-              >
-                <div>
-                  <p className="font-mono text-xs font-bold text-foreground">{hol.name}</p>
-                  <p className="text-[10px] font-mono text-muted-foreground">{hol.date}</p>
-                </div>
-
-                <span
-                  className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md ${
+                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
                     hol.type === 'Special Trading'
-                      ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                      : 'bg-secondary text-secondary-foreground'
-                  }`}
-                >
-                  {hol.type}
-                </span>
-              </div>
-            ))}
+                      ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                      : 'bg-rose-500/10 text-rose-500'
+                  }`}>
+                    {hol.type}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-        </section>
+        )}
+
+        {/* Tab 2: Market Timings */}
+        {activeTab === 'TIMINGS' && (
+          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Indian Stock Market Trading Hours (IST)</h3>
+            <div className="space-y-3">
+              {MARKET_TIMINGS.map((tm, idx) => (
+                <div key={idx} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <div>
+                    <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">{tm.session}</h4>
+                    <p className="text-xs text-slate-500">{tm.desc}</p>
+                  </div>
+                  <span className="font-extrabold text-sm text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
+                    {tm.time}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Earnings Calendar */}
+        {activeTab === 'EARNINGS' && (
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Upcoming Quarterly Results</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {UPCOMING_EARNINGS.map((earn, idx) => (
+                <div key={idx} className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 font-extrabold text-xs flex items-center justify-center">
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">{earn.symbol}</h4>
+                      <p className="text-xs text-slate-500">{earn.company}</p>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white block">{earn.date}</span>
+                    <span className="text-[10px] text-blue-500 font-semibold">{earn.period}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: IPO Calendar */}
+        {activeTab === 'IPOS' && (
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Initial Public Offerings (IPOs)</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {UPCOMING_IPOS.map((ipo, idx) => (
+                <div key={idx} className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                      <Rocket className="w-4 h-4 text-purple-500" /> {ipo.name}
+                    </h4>
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                      {ipo.status}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div>
+                      <span className="text-slate-500 text-[10px] block">Price Band</span>
+                      <strong className="text-slate-800 dark:text-slate-200">{ipo.priceBand}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 text-[10px] block">Bidding Dates</span>
+                      <strong className="text-slate-800 dark:text-slate-200">{ipo.openDate}</strong>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-slate-500 text-[10px] block">Lot Size</span>
+                      <strong className="text-emerald-500">{ipo.lotSize}</strong>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 5: Economic Events */}
+        {activeTab === 'EVENTS' && (
+          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Global & Domestic Economic Indicators</h3>
+            <div className="space-y-3">
+              {ECONOMIC_EVENTS.map((ev, idx) => (
+                <div key={idx} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 font-bold text-xs flex items-center justify-center">
+                      <Globe2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">{ev.event}</h4>
+                      <p className="text-xs text-slate-500">{ev.details}</p>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white block">{ev.date}</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-500">
+                      {ev.impact} Impact
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
-      {/* Add Reminder Dialog */}
-      <Dialog open={isAddReminderOpen} onOpenChange={setIsAddReminderOpen}>
-        <DialogContent className="sm:max-w-[400px] bg-card/95 backdrop-blur-2xl border-primary/20 rounded-3xl p-6">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold flex items-center gap-2">
-              <Clock className="w-4 h-4 text-primary" />
-              Add Personal Reminder
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Set dates for monthly SIPs, quarterly earnings checks, or rebalancing.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 pt-2">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Reminder Title</label>
-              <input
-                type="text"
-                placeholder="e.g. Monthly Nifty SIP Deposit"
-                value={reminderTitle}
-                onChange={(e) => setReminderTitle(e.target.value)}
-                className="w-full h-11 px-4 rounded-xl bg-background border border-border focus:border-primary text-xs font-mono text-foreground outline-none"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Date</label>
-              <input
-                type="date"
-                value={reminderDate}
-                onChange={(e) => setReminderDate(e.target.value)}
-                className="w-full h-11 px-4 rounded-xl bg-background border border-border focus:border-primary text-xs font-mono text-foreground outline-none"
-              />
-            </div>
-
-            <div className="flex items-center gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsAddReminderOpen(false)}
-                className="flex-1 py-2.5 rounded-xl bg-secondary text-secondary-foreground font-semibold text-xs"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleAddReminder}
-                className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-xs shadow-md"
-              >
-                Save Reminder
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <QuickActionsMenu />
       <BottomNav />
+      <QuickActionsMenu />
     </div>
   );
 }

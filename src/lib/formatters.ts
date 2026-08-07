@@ -7,6 +7,10 @@ export function formatINR(amount: number): string {
   }).format(amount);
 }
 
+export function formatCurrency(amount: number): string {
+  return formatINR(amount);
+}
+
 export function formatINRWithSign(amount: number): string {
   const sign = amount >= 0 ? '+' : '';
   return sign + formatINR(Math.abs(amount)).replace('₹', amount < 0 ? '-₹' : '₹');

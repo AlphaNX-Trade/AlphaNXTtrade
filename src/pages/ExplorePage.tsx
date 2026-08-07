@@ -27,11 +27,14 @@ import {
   X,
   Bell,
   SlidersHorizontal,
+  Mic,
 } from 'lucide-react';
 import { useAllAssets } from '@/hooks/useAllAssets';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { BottomNav } from '@/components/dashboard/BottomNav';
 import { getAssetBySymbol, type Asset } from '@/data/marketData';
+import { AdvancedSearchModal } from '@/components/search/AdvancedSearchModal';
+import { V6DiscoverSection } from '@/components/discover/V6DiscoverSection';
 
 const RECENTLY_VIEWED_KEY = 'alphanxt_recently_viewed_symbols';
 
@@ -41,6 +44,7 @@ export default function ExplorePage() {
   const { isInWatchlist, addStock, removeStock, watchlistLoading } = useWatchlist();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<'ALL' | 'stock' | 'index' | 'commodity' | 'watchlist'>('ALL');
   const [activeWatchlistTab, setActiveWatchlistTab] = useState<'Core' | 'Growth' | 'Dividends'>('Core');
   const [customWatchlists, setCustomWatchlists] = useState<Record<string, string[]>>({
@@ -121,9 +125,9 @@ export default function ExplorePage() {
   });
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground flex flex-col max-w-[480px] mx-auto pb-24">
+    <div className="min-h-[100dvh] bg-background text-foreground flex flex-col max-w-4xl mx-auto pb-24">
       {/* Header */}
-      <header className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-background/90 backdrop-blur-xl border-b border-border/80 h-14 flex items-center justify-between px-4 z-40">
+      <header className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl bg-background/90 backdrop-blur-xl border-b border-border/80 h-14 flex items-center justify-between px-4 z-40">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
             <Compass className="w-4 h-4 animate-spin-slow" />
@@ -148,24 +152,36 @@ export default function ExplorePage() {
       {/* Main Container */}
       <main className="flex-1 overflow-y-auto px-4 pt-[68px] space-y-5">
         {/* Search System Bar */}
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search stocks, companies, sectors (e.g. Reliance, IT)..."
-            className="w-full pl-10 pr-10 py-3 bg-card/90 border border-border/80 rounded-2xl text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40 shadow-xs transition-all"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-secondary text-muted-foreground hover:text-foreground"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
+        <div className="relative flex items-center gap-2">
+          <div
+            onClick={() => setIsSearchModalOpen(true)}
+            className="relative flex-1 cursor-pointer"
+          >
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              readOnly
+              value={searchQuery}
+              placeholder="Search stocks, companies, sectors (e.g. Reliance, IT)..."
+              className="w-full pl-10 pr-10 py-3 bg-card/90 border border-border/80 rounded-2xl text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40 shadow-xs transition-all cursor-pointer"
+            />
+          </div>
+
+          <button
+            onClick={() => setIsSearchModalOpen(true)}
+            className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center gap-1 text-xs font-bold shrink-0"
+            title="Voice & Advanced Search"
+          >
+            <Mic className="w-4 h-4" />
+            <span className="hidden sm:inline">Voice Search</span>
+          </button>
         </div>
+
+        {/* Universal Advanced Search Modal */}
+        <AdvancedSearchModal
+          isOpen={isSearchModalOpen}
+          onClose={() => setIsSearchModalOpen(false)}
+        />
 
         {/* Search Results Mode */}
         {searchQuery ? (
@@ -200,8 +216,11 @@ export default function ExplorePage() {
         ) : (
           /* Normal Discovery Dashboard */
           <>
+            {/* V6 Discover Collections, Baskets & Stocks */}
+            <V6DiscoverSection />
+
             {/* Live Indices Ticker Carousel */}
-            <div className="space-y-2">
+            <div className="space-y-2 pt-4">
               <div className="flex items-center justify-between text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 <span className="flex items-center gap-1.5">
                   <Activity className="w-3.5 h-3.5 text-primary" />
