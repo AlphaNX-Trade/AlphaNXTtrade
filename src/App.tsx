@@ -52,6 +52,14 @@ const SmartInsightsPage = lazy(() => import('@/pages/SmartInsightsPage'));
 const GoalsPage = lazy(() => import('@/pages/GoalsPage'));
 const DividendCenterPage = lazy(() => import('@/pages/DividendCenterPage'));
 const TransactionCenterPage = lazy(() => import('@/pages/TransactionCenterPage'));
+const StockComparisonPage = lazy(() => import('@/pages/StockComparisonPage'));
+const InvestmentJournalPage = lazy(() => import('@/pages/InvestmentJournalPage'));
+const ReportsPage = lazy(() => import('@/pages/ReportsPage'));
+const ReferralPage = lazy(() => import('@/pages/ReferralPage'));
+const WalletPage = lazy(() => import('@/pages/WalletPage'));
+const CommunityPage = lazy(() => import('@/pages/CommunityPage'));
+const UserProfilePage = lazy(() => import('@/pages/UserProfilePage'));
+const LeaderboardPage = lazy(() => import('@/pages/LeaderboardPage'));
 
 const queryClient = new QueryClient();
 
@@ -523,6 +531,102 @@ function ProtectedTransactionCenterPage() {
   return <TransactionCenterPage />;
 }
 
+function ProtectedStockComparisonPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <StockComparisonPage />;
+}
+
+function ProtectedInvestmentJournalPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <InvestmentJournalPage />;
+}
+
+function ProtectedReportsPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <ReportsPage />;
+}
+
+function ProtectedReferralPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <ReferralPage />;
+}
+
+function ProtectedWalletPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <WalletPage />;
+}
+
+function ProtectedCommunityPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <CommunityPage />;
+}
+
+function ProtectedLeaderboardPage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <LeaderboardPage />;
+}
+
+function ProtectedUserProfilePage() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!loading && !user) setLocation('/login');
+  }, [user, loading, setLocation]);
+
+  if (loading || !user) return <LoadingScreen />;
+  return <UserProfilePage />;
+}
+
 function Router() {
   return (
     <Suspense fallback={<LoadingScreen />}>
@@ -537,6 +641,9 @@ function Router() {
         <Route path="/markets/:symbol" component={ProtectedAssetDetailPage} />
         <Route path="/trade" component={ProtectedTradePage} />
         <Route path="/trade/:symbol" component={ProtectedTradeSymbolPage} />
+        <Route path="/community" component={ProtectedCommunityPage} />
+        <Route path="/leaderboard" component={ProtectedLeaderboardPage} />
+        <Route path="/profile/:userId" component={ProtectedUserProfilePage} />
         <Route path="/explore" component={ProtectedExplorePage} />
         <Route path="/investments" component={ProtectedInvestmentsPage} />
         <Route path="/portfolio" component={ProtectedPortfolioPage} />
@@ -560,6 +667,11 @@ function Router() {
         <Route path="/goals" component={ProtectedGoalsPage} />
         <Route path="/dividends" component={ProtectedDividendCenterPage} />
         <Route path="/transaction-center" component={ProtectedTransactionCenterPage} />
+        <Route path="/compare" component={ProtectedStockComparisonPage} />
+        <Route path="/journal" component={ProtectedInvestmentJournalPage} />
+        <Route path="/reports" component={ProtectedReportsPage} />
+        <Route path="/referral" component={ProtectedReferralPage} />
+        <Route path="/wallet" component={ProtectedWalletPage} />
         <Route path="/learn/:topicId/quiz" component={ProtectedQuizPage} />
         <Route path="/learn/:topicId" component={ProtectedTopicLessonPage} />
         <Route component={NotFound} />

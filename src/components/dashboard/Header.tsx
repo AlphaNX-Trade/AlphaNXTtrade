@@ -1,7 +1,8 @@
 import { useLocation } from 'wouter';
-import { Bell, Terminal } from 'lucide-react';
+import { Bell, Terminal, Wallet } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { UserAvatar } from '@/components/common/UserAvatar';
 
 export function Header() {
   const [, setLocation] = useLocation();
@@ -14,23 +15,45 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] h-14 bg-background/95 backdrop-blur z-50 border-b border-border flex items-center justify-between px-4">
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => setLocation('/dashboard')}>
         <Terminal className="w-4 h-4 text-primary" />
         <span className="font-bold tracking-tight text-lg">
           <span className="text-primary">Alpha</span>
           <span className="text-foreground">NXT</span>
         </span>
       </div>
+
       <div className="flex flex-col items-center">
         <span className="text-xs font-mono text-muted-foreground">{greeting}, {name}</span>
       </div>
-      <button
-        onClick={() => setLocation('/notifications')}
-        className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
-        data-testid="button-notifications"
-      >
-        <Bell className="w-5 h-5" />
-      </button>
+
+      <div className="flex items-center gap-1">
+        <UserAvatar
+          src={profile?.avatarUrl}
+          name={profile?.fullName || user?.displayName}
+          frame={profile?.avatarFrame as any}
+          size="xs"
+          onClick={() => setLocation('/profile')}
+          className="mr-1 cursor-pointer"
+        />
+
+        <button
+          onClick={() => setLocation('/wallet')}
+          className="p-1.5 text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+          title="Virtual Funds Wallet"
+        >
+          <Wallet className="w-4 h-4" />
+        </button>
+
+        <button
+          onClick={() => setLocation('/notifications')}
+          className="relative p-1.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          data-testid="button-notifications"
+          title="Notifications"
+        >
+          <Bell className="w-4 h-4" />
+        </button>
+      </div>
     </header>
   );
 }

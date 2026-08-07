@@ -146,7 +146,7 @@ export default function ProfilePage() {
         {/* Menu */}
         <div className="space-y-2">
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground px-1">
-            Trading Hub & Tools
+            Trading Hub & Premium V8 Tools
           </p>
           <ProfileMenuItem
             icon={Compass}
@@ -157,6 +157,26 @@ export default function ProfilePage() {
             icon={Star}
             label="Advanced Watchlists"
             onClick={() => setLocation('/watchlist')}
+          />
+          <ProfileMenuItem
+            icon={BarChart2}
+            label="Stock Comparison Studio"
+            onClick={() => setLocation('/compare')}
+          />
+          <ProfileMenuItem
+            icon={Target}
+            label="Private Investment Journal"
+            onClick={() => setLocation('/journal')}
+          />
+          <ProfileMenuItem
+            icon={ShieldCheck}
+            label="Download Financial Reports"
+            onClick={() => setLocation('/reports')}
+          />
+          <ProfileMenuItem
+            icon={Trophy}
+            label="Invite Friends & Referral Program"
+            onClick={() => setLocation('/referral')}
           />
           <ProfileMenuItem
             icon={Bell}

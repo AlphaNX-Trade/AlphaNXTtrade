@@ -20,6 +20,7 @@ import { TradingChart } from '@/components/markets/TradingChart';
 import { AssetTabs, type AssetTab } from '@/components/markets/AssetTabs';
 import { OptionChainTable } from '@/components/options/OptionChainTable';
 import { deriveTrendSummary } from '@/lib/technicalIndicators';
+import { MarketDiscussionWidget } from '@/components/community/MarketDiscussionWidget';
 
 interface StatCellProps {
   label: string;
@@ -416,6 +417,9 @@ export default function AssetDetailPage({ symbol }: AssetDetailPageProps) {
             )}
           </div>
         )}
+
+        {/* ── Market Discussion Section ───────────────────────────── */}
+        <MarketDiscussionWidget symbol={asset.symbol} />
       </main>
 
       {/* Sticky Buy/Sell CTA (Hidden for indices/option underlyings like NIFTY) */}

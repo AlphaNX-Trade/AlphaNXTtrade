@@ -15,12 +15,21 @@ export interface FinancialGoal {
 export interface PersonalizationSettings {
   favoriteSectors: string[];
   preferredWatchlistId: string;
+  defaultLandingPage: string;
   quickActions: string[];
+  widgetOrder: string[];
+  pinnedWidgets: string[];
   dashboardWidgets: {
+    portfolio: boolean;
+    quickActions: boolean;
+    marketOverview: boolean;
     healthScore: boolean;
     dailySummary: boolean;
-    quickActions: boolean;
-    marketMovers: boolean;
+    topGainers: boolean;
+    topLosers: boolean;
+    news: boolean;
+    investments: boolean;
+    watchlist: boolean;
     goalProgress: boolean;
     investmentIdeas: boolean;
     recentTransactions: boolean;
@@ -51,12 +60,31 @@ const DEFAULT_GOALS: FinancialGoal[] = [
 const DEFAULT_SETTINGS: PersonalizationSettings = {
   favoriteSectors: ['Technology', 'Banking', 'Energy'],
   preferredWatchlistId: 'default',
-  quickActions: ['buy', 'watchlist', 'analytics', 'alerts'],
+  defaultLandingPage: '/dashboard',
+  quickActions: ['buy', 'watchlist', 'analytics', 'alerts', 'compare', 'journal'],
+  widgetOrder: [
+    'portfolio',
+    'quickActions',
+    'healthScore',
+    'marketOverview',
+    'topGainers',
+    'topLosers',
+    'investments',
+    'watchlist',
+    'news',
+  ],
+  pinnedWidgets: ['portfolio', 'quickActions'],
   dashboardWidgets: {
+    portfolio: true,
+    quickActions: true,
+    marketOverview: true,
     healthScore: true,
     dailySummary: true,
-    quickActions: true,
-    marketMovers: true,
+    topGainers: true,
+    topLosers: true,
+    news: true,
+    investments: true,
+    watchlist: true,
     goalProgress: true,
     investmentIdeas: true,
     recentTransactions: true,
@@ -192,6 +220,49 @@ export function usePersonalization() {
     [addGoal]
   );
 
+  const reorderWidgets = useCallback(
+    (newOrder: string[]) => {
+      setSettings((prev) => {
+        const updated = { ...prev, widgetOrder: newOrder };
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+    },
+    [storageKey]
+  );
+
+  const togglePinWidget = useCallback(
+    (widgetId: string) => {
+      setSettings((prev) => {
+        const isPinned = prev.pinnedWidgets.includes(widgetId);
+        const pinnedWidgets = isPinned
+          ? prev.pinnedWidgets.filter((w) => w !== widgetId)
+          : [...prev.pinnedWidgets, widgetId];
+        const updated = { ...prev, pinnedWidgets };
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+    },
+    [storageKey]
+  );
+
+  const setDefaultLandingPage = useCallback(
+    (page: string) => {
+      setSettings((prev) => {
+        const updated = { ...prev, defaultLandingPage: page };
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+    },
+    [storageKey]
+  );
+
   return {
     settings,
     updateSettings,
@@ -201,5 +272,8 @@ export function usePersonalization() {
     toggleSector,
     toggleWidget,
     setFinancialGoal,
+    reorderWidgets,
+    togglePinWidget,
+    setDefaultLandingPage,
   };
 }

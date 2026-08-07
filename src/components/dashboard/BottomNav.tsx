@@ -1,20 +1,20 @@
-import { Home, BarChart2, Compass, LineChart, PieChart, User } from 'lucide-react';
+import { Home, BarChart2, Compass, PieChart, User, Users } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { motion } from 'framer-motion';
 
 const tabs = [
   { id: 'home',        icon: Home,       label: 'Home',        path: '/dashboard' },
   { id: 'markets',     icon: BarChart2,   label: 'Markets',     path: '/markets'   },
+  { id: 'community',   icon: Users,       label: 'Community',   path: '/community' },
   { id: 'explore',     icon: Compass,     label: 'Explore',     path: '/explore'   },
-  { id: 'investments', icon: LineChart,   label: 'Investments', path: '/investments' },
   { id: 'portfolio',   icon: PieChart,    label: 'Portfolio',   path: '/portfolio' },
   { id: 'profile',     icon: User,        label: 'Profile',     path: '/profile'   },
 ];
 
 function getActiveTab(location: string): string {
   if (location.startsWith('/markets')) return 'markets';
+  if (location.startsWith('/community') || location.startsWith('/leaderboard')) return 'community';
   if (location.startsWith('/explore') || location.startsWith('/trade')) return 'explore';
-  if (location.startsWith('/investments')) return 'investments';
   if (location.startsWith('/portfolio')) return 'portfolio';
   if (location.startsWith('/profile')) return 'profile';
   return 'home';

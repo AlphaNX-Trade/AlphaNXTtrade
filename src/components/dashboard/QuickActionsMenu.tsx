@@ -31,42 +31,13 @@ export function QuickActionsMenu() {
   const { toast } = useToast();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [modalType, setModalType] = useState<'deposit' | 'withdraw' | null>(null);
+  const [modalType, setModalType] = useState<'withdraw' | null>(null);
   const [amountInput, setAmountInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleMenu = () => {
     triggerHaptic('light');
     setIsOpen((prev) => !prev);
-  };
-
-  const handleDeposit = async () => {
-    const num = parseFloat(amountInput);
-    if (isNaN(num) || num <= 0) {
-      toast({ title: 'Invalid Amount', description: 'Please enter a positive amount.', variant: 'destructive' });
-      return;
-    }
-    if (!user) return;
-
-    setIsSubmitting(true);
-    try {
-      const userRef = doc(db, 'users', user.uid);
-      const portRef = doc(db, 'portfolio', user.uid);
-
-      await updateDoc(userRef, { virtualBalance: increment(num) });
-      await updateDoc(portRef, { virtualBalance: increment(num) }).catch(() => {});
-
-      toast({
-        title: 'Funds Added! 💰',
-        description: `Successfully added ₹${num.toLocaleString('en-IN')} to your virtual wallet.`,
-      });
-      setModalType(null);
-      setAmountInput('');
-    } catch (err: any) {
-      toast({ title: 'Deposit Failed', description: err.message, variant: 'destructive' });
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const handleWithdraw = async () => {
@@ -122,16 +93,6 @@ export function QuickActionsMenu() {
       action: () => {
         setIsOpen(false);
         setLocation('/trade');
-      },
-    },
-    {
-      id: 'deposit',
-      label: 'Add Funds',
-      icon: Wallet,
-      color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-      action: () => {
-        setIsOpen(false);
-        setModalType('deposit');
       },
     },
     {
@@ -254,18 +215,16 @@ export function QuickActionsMenu() {
         </motion.button>
       </div>
 
-      {/* Deposit / Withdraw Modal */}
+      {/* Withdraw Modal */}
       <Dialog open={modalType !== null} onOpenChange={() => setModalType(null)}>
         <DialogContent className="max-w-md bg-slate-900 border-slate-800 text-white p-6 rounded-3xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-extrabold flex items-center gap-2">
-              <Wallet className="w-5 h-5 text-emerald-400" />
-              {modalType === 'deposit' ? 'Add Funds to Virtual Balance' : 'Withdraw Funds'}
+              <Wallet className="w-5 h-5 text-amber-400" />
+              Withdraw Funds
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-400">
-              {modalType === 'deposit'
-                ? 'Add funds to practice paper trading risk-free.'
-                : 'Withdraw practice funds back into reserve.'}
+              Withdraw practice funds back into reserve.
             </DialogDescription>
           </DialogHeader>
 
@@ -279,16 +238,16 @@ export function QuickActionsMenu() {
                 value={amountInput}
                 onChange={(e) => setAmountInput(e.target.value)}
                 placeholder="50000"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-800/50 text-white text-sm font-bold focus:outline-none focus:border-emerald-500"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-800/50 text-white text-sm font-bold focus:outline-none focus:border-amber-500"
               />
             </div>
 
             <button
               disabled={isSubmitting}
-              onClick={modalType === 'deposit' ? handleDeposit : handleWithdraw}
-              className="w-full py-3 rounded-2xl bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-600 transition-all shadow-md disabled:opacity-50"
+              onClick={handleWithdraw}
+              className="w-full py-3 rounded-2xl bg-amber-500 text-black font-bold text-sm hover:bg-amber-400 transition-all shadow-md disabled:opacity-50"
             >
-              {isSubmitting ? 'Processing...' : modalType === 'deposit' ? 'Confirm Deposit' : 'Confirm Withdrawal'}
+              {isSubmitting ? 'Processing...' : 'Confirm Withdrawal'}
             </button>
           </div>
         </DialogContent>

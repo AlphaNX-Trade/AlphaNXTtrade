@@ -15,9 +15,15 @@ import {
   Edit3,
   X,
   Sparkles,
+  ArrowUpDown,
+  Clock,
+  Flame,
+  Tag,
 } from 'lucide-react';
 import { useAdvancedWatchlist } from '@/hooks/useAdvancedWatchlist';
 import { useAllAssets } from '@/hooks/useAllAssets';
+import { usePriceAlerts } from '@/hooks/usePriceAlerts';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomNav } from '@/components/dashboard/BottomNav';
 import { QuickActionsMenu } from '@/components/dashboard/QuickActionsMenu';
@@ -28,6 +34,8 @@ export default function WatchlistPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const assets = useAllAssets();
+  const { alerts } = usePriceAlerts();
+  const { recentlyViewed } = useRecentlyViewed();
   const {
     customLists,
     createList,
@@ -41,6 +49,8 @@ export default function WatchlistPage() {
 
   const [activeListId, setActiveListId] = useState('default');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'PINNED' | 'PRICE_HIGH' | 'PRICE_LOW' | 'GAIN' | 'LOSS' | 'VOLUME' | 'NAME'>('PINNED');
+  const [activeTab, setActiveTab] = useState<'WATCHLIST' | 'RECENT' | 'MOST_WATCHED'>('WATCHLIST');
 
   // Modals state
   const [isNewListOpen, setIsNewListOpen] = useState(false);
@@ -60,28 +70,49 @@ export default function WatchlistPage() {
 
   // Assets in current list
   const listAssets = useMemo(() => {
-    if (!assets || !activeList) return [];
+    if (!assets) return [];
+    if (activeTab === 'RECENT') {
+      return recentlyViewed
+        .map((sym) => assets.find((a) => a.symbol === sym))
+        .filter((a): a is NonNullable<typeof a> => a !== undefined);
+    }
+    if (activeTab === 'MOST_WATCHED') {
+      // Top bluechips as most watched
+      return ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'TATAMOTORS', 'ICICIBANK', 'SBIN', 'BHARTIARTL']
+        .map((sym) => assets.find((a) => a.symbol === sym))
+        .filter((a): a is NonNullable<typeof a> => a !== undefined);
+    }
+    if (!activeList) return [];
     return activeList.symbols
       .map((sym) => assets.find((a) => a.symbol === sym))
       .filter((a): a is NonNullable<typeof a> => a !== undefined);
-  }, [assets, activeList]);
+  }, [assets, activeList, activeTab, recentlyViewed]);
 
-  // Filtered & Sorted (Pinned first, then searched)
+  // Filtered & Sorted
   const filteredAssets = useMemo(() => {
-    let result = listAssets;
+    let result = [...listAssets];
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
         (a) => a.symbol.toLowerCase().includes(q) || a.name.toLowerCase().includes(q),
       );
     }
-    // Sort pinned to top
+
+    // Apply Sorting
     return result.sort((a, b) => {
+      if (sortBy === 'PRICE_HIGH') return b.price - a.price;
+      if (sortBy === 'PRICE_LOW') return a.price - b.price;
+      if (sortBy === 'GAIN') return b.changePercent - a.changePercent;
+      if (sortBy === 'LOSS') return a.changePercent - b.changePercent;
+      if (sortBy === 'VOLUME') return (b.volume || 0) - (a.volume || 0);
+      if (sortBy === 'NAME') return a.symbol.localeCompare(b.symbol);
+
+      // Default PINNED
       const aPinned = activeList?.pinnedSymbols.includes(a.symbol) ? 1 : 0;
       const bPinned = activeList?.pinnedSymbols.includes(b.symbol) ? 1 : 0;
       return bPinned - aPinned;
     });
-  }, [listAssets, searchQuery, activeList]);
+  }, [listAssets, searchQuery, activeList, sortBy]);
 
   const handleCreateList = () => {
     if (!newListTitle.trim()) {
@@ -138,64 +169,116 @@ export default function WatchlistPage() {
 
       {/* Main Container */}
       <main className="flex-1 overflow-y-auto px-4 pt-18 pb-6 space-y-5">
-        {/* Horizontal Custom Watchlists Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {customLists.map((list) => {
-            const isActive = list.id === activeListId;
-            return (
-              <button
-                key={list.id}
-                onClick={() => setActiveListId(list.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap border ${
-                  isActive
-                    ? 'bg-primary text-primary-foreground border-primary shadow-[0_4px_15px_rgba(0,210,210,0.25)]'
-                    : 'bg-card/70 border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/30'
-                }`}
-              >
-                <span>{list.name}</span>
-                <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                    isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {list.symbols.length}
-                </span>
-              </button>
-            );
-          })}
+        {/* Navigation Tabs: Custom Lists / Recently Viewed / Most Watched */}
+        <div className="flex items-center gap-2 p-1 rounded-2xl bg-card border border-border/80">
+          <button
+            onClick={() => setActiveTab('WATCHLIST')}
+            className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+              activeTab === 'WATCHLIST'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Star className="w-3.5 h-3.5" /> Watchlists
+          </button>
+          <button
+            onClick={() => setActiveTab('RECENT')}
+            className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+              activeTab === 'RECENT'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5" /> Recent ({recentlyViewed.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('MOST_WATCHED')}
+            className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+              activeTab === 'MOST_WATCHED'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Flame className="w-3.5 h-3.5 text-amber-500" /> Popular
+          </button>
         </div>
 
-        {/* Watchlist Action Bar: Search + Add Stock Button */}
+        {/* Horizontal Custom Watchlists Tabs (Only when WATCHLIST tab active) */}
+        {activeTab === 'WATCHLIST' && (
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {customLists.map((list) => {
+              const isActive = list.id === activeListId;
+              return (
+                <button
+                  key={list.id}
+                  onClick={() => setActiveListId(list.id)}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap border ${
+                    isActive
+                      ? 'bg-primary/10 text-primary border-primary shadow-sm'
+                      : 'bg-card/70 border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/30'
+                  }`}
+                >
+                  <span>{list.name}</span>
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                      isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {list.symbols.length}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Watchlist Action Bar: Search + Sort Dropdown + Add Stock Button */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder={`Search in ${activeList?.name}...`}
+              placeholder={`Search symbols...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-10 pl-9 pr-4 rounded-xl bg-card/80 border border-border/80 focus:border-primary text-xs font-mono text-foreground placeholder:text-muted-foreground outline-none transition-colors"
             />
           </div>
 
-          <button
-            onClick={() => setIsAddStockOpen(true)}
-            className="h-10 px-3 bg-primary text-primary-foreground rounded-xl font-mono text-xs font-bold flex items-center gap-1.5 shadow-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="h-10 px-2.5 rounded-xl bg-card border border-border/80 text-xs font-bold text-foreground focus:outline-none"
           >
-            <Plus className="w-4 h-4" />
-            Add
-          </button>
+            <option value="PINNED">Sort: Pinned</option>
+            <option value="PRICE_HIGH">Price: High → Low</option>
+            <option value="PRICE_LOW">Price: Low → High</option>
+            <option value="GAIN">Top Gainers (%)</option>
+            <option value="LOSS">Top Decliners (%)</option>
+            <option value="VOLUME">Highest Volume</option>
+            <option value="NAME">Name (A-Z)</option>
+          </select>
+
+          {activeTab === 'WATCHLIST' && (
+            <button
+              onClick={() => setIsAddStockOpen(true)}
+              className="h-10 px-3 bg-primary text-primary-foreground rounded-xl font-mono text-xs font-bold flex items-center gap-1.5 shadow-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Add
+            </button>
+          )}
         </div>
 
         {/* Watchlist Stock Cards */}
         {filteredAssets.length === 0 ? (
           <EmptyState
             icon={Star}
-            title={searchQuery ? 'No matching assets found' : 'Watchlist is empty'}
+            title={searchQuery ? 'No matching assets found' : 'No assets in this view'}
             description={
               searchQuery
                 ? 'Try searching for a different symbol or company name.'
-                : 'Add your favorite stocks, cryptocurrencies, and commodities to track live prices.'
+                : 'Add assets to your watchlist to track live prices and set price triggers.'
             }
             actionLabel="Add Assets to Watchlist"
             onAction={() => setIsAddStockOpen(true)}
@@ -207,6 +290,7 @@ export default function WatchlistPage() {
               const isPinned = activeList?.pinnedSymbols.includes(asset.symbol);
               const isPositive = asset.changePercent >= 0;
               const hasNote = Boolean(getNote(asset.symbol));
+              const hasAlert = alerts.some((a) => a.symbol === asset.symbol && a.active);
 
               return (
                 <motion.div
@@ -238,13 +322,18 @@ export default function WatchlistPage() {
                             {asset.symbol}
                           </span>
                           {isPinned && (
-                            <span className="p-0.5 rounded bg-amber-500/20 text-amber-400">
+                            <span className="p-0.5 rounded bg-amber-500/20 text-amber-400" title="Pinned Stock">
                               <Pin className="w-3 h-3 fill-amber-400" />
                             </span>
                           )}
                           {hasNote && (
-                            <span className="p-0.5 rounded bg-primary/20 text-primary">
+                            <span className="p-0.5 rounded bg-primary/20 text-primary" title="Research note saved">
                               <FileText className="w-3 h-3" />
+                            </span>
+                          )}
+                          {hasAlert && (
+                            <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-bold flex items-center gap-0.5 border border-amber-500/30">
+                              <Bell className="w-2.5 h-2.5 fill-amber-400 animate-pulse" /> Alert Active
                             </span>
                           )}
                         </div>

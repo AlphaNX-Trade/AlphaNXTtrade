@@ -4,10 +4,12 @@ import {
   Layers,
   Sparkles,
   Target,
-  Coins,
-  FileText,
-  Calendar,
-  BookOpen,
+  Gift,
+  Download,
+  BookMarked,
+  Scale,
+  Users,
+  Trophy,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -15,20 +17,20 @@ export function QuickActions() {
   const [, setLocation] = useLocation();
 
   const actions = [
-    { icon: TrendingUp, label: 'Trade', active: true, path: '/trade' },
-    { icon: Layers, label: 'My Assets', active: false, path: '/my-assets' },
+    { icon: Users, label: 'Community', active: true, path: '/community' },
+    { icon: Trophy, label: 'Leaderboard', active: true, path: '/leaderboard' },
+    { icon: TrendingUp, label: 'Trade', active: false, path: '/trade' },
+    { icon: Scale, label: 'Compare', active: false, path: '/compare' },
+    { icon: BookMarked, label: 'Journal', active: false, path: '/journal' },
+    { icon: Download, label: 'Reports', active: false, path: '/reports' },
+    { icon: Gift, label: 'Invite', active: false, path: '/referral' },
     { icon: Sparkles, label: 'Insights', active: false, path: '/insights' },
-    { icon: Target, label: 'Goals', active: false, path: '/goals' },
-    { icon: Coins, label: 'Dividends', active: false, path: '/dividends' },
-    { icon: FileText, label: 'Ledger', active: false, path: '/transaction-center' },
-    { icon: Calendar, label: 'Calendar', active: false, path: '/calendar' },
-    { icon: BookOpen, label: 'Academy', active: false, path: '/learn' },
   ];
 
   return (
     <div className="space-y-3">
       <h3 className="text-xs text-muted-foreground uppercase font-mono tracking-wider px-1">
-        V7 Ecosystem Quick Hub
+        V8 Smart Ecosystem Hub
       </h3>
       <div className="grid grid-cols-4 gap-2.5">
         {actions.map((action) => (

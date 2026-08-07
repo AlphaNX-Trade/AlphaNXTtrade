@@ -1,5 +1,5 @@
 import { useLocation } from 'wouter';
-import { ChevronLeft, PieChart, History, BarChart2, Layers, Sparkles, Target, Coins, FileText, Calendar } from 'lucide-react';
+import { ChevronLeft, PieChart, History, BarChart2, Layers, Sparkles, Target, Coins, FileText, Calendar, Wallet } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useHoldings } from '@/hooks/useHoldings';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -70,26 +70,27 @@ export default function PortfolioPage() {
       <header className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl bg-background/95 backdrop-blur border-b border-border h-14 flex items-center justify-between px-4 z-40">
         <button
           onClick={() => setLocation('/dashboard')}
-          className="text-muted-foreground hover:text-foreground transition-colors p-1 -ml-1"
+          className="text-muted-foreground hover:text-foreground transition-colors p-1 -ml-1 cursor-pointer"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <span className="font-semibold text-base text-foreground">V7 Portfolio Ecosystem</span>
-        <div className="flex items-center gap-1">
+        <span className="font-semibold text-base text-foreground">V8 Portfolio Ecosystem</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setLocation('/wallet')}
+            className="text-muted-foreground hover:text-primary transition-colors p-1 cursor-pointer"
+            aria-label="Virtual Wallet"
+            title="Virtual Funds Wallet"
+          >
+            <Wallet className="w-5 h-5" />
+          </button>
           <button
             onClick={() => setLocation('/statistics')}
-            className="text-muted-foreground hover:text-primary transition-colors p-1"
+            className="text-muted-foreground hover:text-primary transition-colors p-1 cursor-pointer"
             aria-label="Personal Statistics"
             title="Personal Analytics"
           >
             <BarChart2 className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setLocation('/history')}
-            className="text-muted-foreground hover:text-foreground transition-colors p-1"
-            aria-label="Trade history"
-          >
-            <History className="w-5 h-5" />
           </button>
         </div>
       </header>
@@ -114,22 +115,26 @@ export default function PortfolioPage() {
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card border border-primary/20 rounded-xl p-4 shadow-[0_0_30px_rgba(0,210,210,0.06)] relative"
+            className="bg-card border border-primary/20 rounded-2xl p-5 shadow-[0_0_30px_rgba(0,210,210,0.06)] relative space-y-4"
           >
             <div className="absolute -top-px left-6 right-6 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
-              Portfolio Value
-            </p>
-            <p className="font-mono font-bold text-2xl text-primary mb-4">
-              {fmt(portfolioValue)}
-            </p>
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5">
+                Portfolio Value
+              </p>
+              <p className="font-mono font-bold text-2xl text-primary">
+                {fmt(portfolioValue)}
+              </p>
+            </div>
 
-            <div className="grid grid-cols-2 gap-y-4 gap-x-3">
-              <SummaryStatCell
-                label="Cash Balance"
-                value={fmt(virtualBalance)}
-              />
+            <div className="grid grid-cols-2 gap-y-4 gap-x-3 pt-2 border-t border-border/50">
+              <div className="flex flex-col gap-0.5">
+                <p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+                  Virtual Cash Balance
+                </p>
+                <p className="font-mono text-sm font-semibold text-emerald-400">{fmt(virtualBalance)}</p>
+              </div>
               <SummaryStatCell
                 label="Invested"
                 value={fmt(totalInvested)}
@@ -148,24 +153,24 @@ export default function PortfolioPage() {
           </motion.div>
         )}
 
-        {/* V7 Premium Financial Ecosystem Quick Hub */}
+        {/* V8 Premium Financial Ecosystem Quick Hub */}
         <div className="space-y-2">
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            V7 Financial Ecosystem Modules
+            V8 Financial Ecosystem Modules
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
             {[
+              { label: 'Virtual Wallet', path: '/wallet', icon: Wallet, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
               { label: 'My Assets', path: '/my-assets', icon: Layers, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
               { label: 'Smart Insights', path: '/insights', icon: Sparkles, color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
               { label: 'Financial Goals', path: '/goals', icon: Target, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
               { label: 'Dividend Center', path: '/dividends', icon: Coins, color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
               { label: 'Transaction Center', path: '/transaction-center', icon: FileText, color: 'text-teal-400 bg-teal-500/10 border-teal-500/20' },
-              { label: 'Market Calendar', path: '/calendar', icon: Calendar, color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
             ].map((mod) => (
               <button
                 key={mod.path}
                 onClick={() => setLocation(mod.path)}
-                className="p-3.5 rounded-xl border bg-card/60 hover:bg-card border-border/80 hover:border-primary/40 flex items-center gap-2.5 transition-all text-left group"
+                className="p-3.5 rounded-xl border bg-card/60 hover:bg-card border-border/80 hover:border-primary/40 flex items-center gap-2.5 transition-all text-left group cursor-pointer"
               >
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${mod.color}`}>
                   <mod.icon className="w-4 h-4" />

@@ -15,6 +15,20 @@ export interface UserProfileDoc {
   username?: string;
   /** Admin-assigned label (e.g. "VIP Trader", "Verified") — only the admin can set this, never the user. */
   title?: string;
+  avatarUrl?: string | null;
+  avatarFrame?: string;
+  bio?: string;
+  country?: string;
+  city?: string;
+  tradingExperience?: string;
+  favouriteMarket?: string;
+  favouriteSector?: string;
+  avatarVisibility?: 'public' | 'followers' | 'private';
+  isPortfolioPublic?: boolean;
+  badges?: string[];
+  isPostingSuspended?: boolean;
+  isBanned?: boolean;
+  referralCount?: number;
 }
 
 /** portfolio/{uid} — financial / trading data */
@@ -174,3 +188,44 @@ export async function updateUsername(uid: string, username: string): Promise<voi
   }
   await updateDoc(doc(db, 'users', uid), { username: trimmed || null });
 }
+
+/**
+ * Updates avatar, bio, and social settings
+ */
+export async function updateUserSocialProfile(
+  uid: string,
+  data: {
+    avatarUrl?: string | null;
+    avatarFrame?: string;
+    bio?: string;
+    country?: string;
+    city?: string;
+    tradingExperience?: string;
+    favouriteMarket?: string;
+    favouriteSector?: string;
+    avatarVisibility?: 'public' | 'followers' | 'private';
+    isPortfolioPublic?: boolean;
+  },
+): Promise<void> {
+  const updates: Record<string, any> = {};
+  if (data.avatarUrl !== undefined) updates.avatarUrl = data.avatarUrl;
+  if (data.avatarFrame !== undefined) updates.avatarFrame = data.avatarFrame;
+  if (data.bio !== undefined) updates.bio = data.bio;
+  if (data.country !== undefined) updates.country = data.country;
+  if (data.city !== undefined) updates.city = data.city;
+  if (data.tradingExperience !== undefined) updates.tradingExperience = data.tradingExperience;
+  if (data.favouriteMarket !== undefined) updates.favouriteMarket = data.favouriteMarket;
+  if (data.favouriteSector !== undefined) updates.favouriteSector = data.favouriteSector;
+  if (data.avatarVisibility !== undefined) updates.avatarVisibility = data.avatarVisibility;
+  if (data.isPortfolioPublic !== undefined) updates.isPortfolioPublic = data.isPortfolioPublic;
+
+  if (Object.keys(updates).length > 0) {
+    await updateDoc(doc(db, 'users', uid), updates);
+  }
+}
+
+/** Toggles public/private portfolio visibility */
+export async function togglePortfolioPrivacy(uid: string, isPublic: boolean): Promise<void> {
+  await updateDoc(doc(db, 'users', uid), { isPortfolioPublic: isPublic });
+}
+

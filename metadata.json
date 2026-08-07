@@ -1,6 +1,6 @@
 {
   "name": "AlphaNXT",
-  "description": "AI-powered paper trading and trading education platform",
+  "description": "AlphaNXT V11 — AI-powered paper trading, social trading feed, trader profiles, community discussions, and leaderboards",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
